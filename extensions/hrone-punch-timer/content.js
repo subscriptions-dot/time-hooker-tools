@@ -29,6 +29,14 @@
     return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
   }
 
+  function dateKeyFromDate(date) {
+    return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+  }
+
+  function isToday(date) {
+    return date instanceof Date && !Number.isNaN(date.getTime()) && dateKeyFromDate(date) === todayKey();
+  }
+
   function dateKeyFromParts(day, month, year) {
     return `${year}-${pad2(month)}-${pad2(day)}`;
   }
@@ -87,10 +95,21 @@
     renderTimer();
   }
 
+  function hideTimer(text) {
+    punchDate = null;
+    punchSource = "Last punch";
+    statusText = text || "Waiting for today's punch";
+
+    if (timerNode) {
+      timerNode.remove();
+      timerNode = null;
+    }
+  }
+
   function setFirstPunchFromTime(dateKey, timeText) {
     const date = dateFromKeyAndTime(dateKey, timeText);
 
-    if (!date || dateKey !== todayKey()) {
+    if (!date || dateKey !== todayKey() || !isToday(date)) {
       return false;
     }
 
@@ -266,7 +285,13 @@
       return;
     }
 
-    const elapsedMinutes = (Date.now() - punchDate.getTime()) / 60000;
+    if (!isToday(punchDate)) {
+      hideTimer("Hidden: previous-day punch ignored");
+      return;
+    }
+
+    const rawElapsedMinutes = Math.max(0, (Date.now() - punchDate.getTime()) / 60000);
+    const elapsedMinutes = Math.min(WORK_TARGET_MINUTES, rawElapsedMinutes);
     const remainingMinutes = Math.max(0, WORK_TARGET_MINUTES - elapsedMinutes);
     const progress = Math.min(100, Math.max(0, (elapsedMinutes / WORK_TARGET_MINUTES) * 100));
     const sourceText = punchSource === "In-Time" && syncedFirstPunchTime
@@ -291,14 +316,21 @@
     const lastPunchElement = findLastPunchElement();
     const pageLastPunchDate = parseLastPunch(document.body ? document.body.innerText : "");
 
+    if (punchSource === "In-Time" && punchDate && !isToday(punchDate)) {
+      hideTimer("Hidden: previous-day In-Time ignored");
+      return;
+    }
+
     if (!lastPunchElement && !pageLastPunchDate && punchSource !== "In-Time") {
+      hideTimer("Waiting for today's punch");
       return;
     }
 
     const lastPunchDate = lastPunchElement ? parseLastPunch(lastPunchElement.textContent) : pageLastPunchDate;
     const selectedDate = punchSource === "In-Time" ? punchDate : lastPunchDate;
 
-    if (!selectedDate) {
+    if (!selectedDate || !isToday(selectedDate)) {
+      hideTimer("Hidden: previous-day punch ignored");
       return;
     }
 

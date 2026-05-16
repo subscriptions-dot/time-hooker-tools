@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "HROne Punch Timer",
-  "version": "1.5.1",
-  "description": "Shows a safe worked-hours timer from HROne's first punch time.",
+  "version": "1.6.0",
+  "description": "Shows a today-only worked-hours timer from HROne's first punch time.",
   "permissions": ["storage"],
   "content_scripts": [
     {

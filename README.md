@@ -45,6 +45,8 @@ It shows:
 - worked time
 - remaining time
 - progress toward the default `8h30m` work target
+- hides stale previous-day punches
+- stops the displayed worked time at `8h30m` after the target is complete
 
 It stores only today's first punch time in local Chrome storage and does not send attendance data anywhere.
 
