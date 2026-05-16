@@ -1,0 +1,81 @@
+#hrone-punch-timer {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  margin-top: 8px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.25;
+  letter-spacing: 0;
+  text-align: left;
+  pointer-events: none;
+  clear: both;
+  background: transparent;
+  box-shadow: none;
+}
+
+#hrone-punch-timer,
+#hrone-punch-timer * {
+  box-sizing: border-box;
+}
+
+.hrone-punch-timer__row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 16px;
+  white-space: nowrap;
+}
+
+.hrone-punch-timer__meta {
+  margin-bottom: 1px;
+  font-size: 10.5px;
+  font-weight: 500;
+  opacity: 0.82;
+  white-space: nowrap;
+}
+
+.hrone-punch-timer__label {
+  font-weight: 600;
+  opacity: 0.96;
+}
+
+.hrone-punch-timer__label::after {
+  content: "-";
+  margin-left: 5px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.hrone-punch-timer__value {
+  font-weight: 600;
+  opacity: 0.98;
+}
+
+.hrone-punch-timer__left {
+  margin-left: auto;
+  padding-left: 8px;
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.hrone-punch-timer__bar {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 3px;
+  margin-top: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.hrone-punch-timer__bar-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: #ff674f;
+  transition: width 250ms ease;
+}

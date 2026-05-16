@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "HROne Punch Timer",
+  "version": "1.5.1",
+  "description": "Shows a safe worked-hours timer from HROne's first punch time.",
+  "permissions": ["storage"],
+  "content_scripts": [
+    {
+      "matches": ["https://app.hrone.cloud/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
