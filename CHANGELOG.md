@@ -1,5 +1,12 @@
 # Changelog
 
+## 40.0 - V38 Flow + Universal Pattern Mode
+
+- Restored V38 fast VPlink/DarkGuruji/StartupLearners step behavior by removing the V39 step-state wait and `STEP LOOP: manual` block.
+- Added optional `Universal Pattern Mode` for unknown same-pattern shortlink pages.
+- Universal mode is OFF by default and can be saved per site profile.
+- Unknown sites use proxy-first safety: intermediate same-host flow links may continue, but final, external, and Telegram-style targets stay manual.
+
 ## 39.0 - StartupLearners Step-State Fix
 
 - Made StartupLearners `btn6`/`btn7` handling conservative so hidden Continue links are not followed immediately after verify.

@@ -1,12 +1,12 @@
 // ==UserScript==
 
-// @name            Time Hooker (V39.0 - StartupLearners Step-State Fix)
+// @name            Time Hooker (V40.0 - V38 Flow + Universal Pattern Mode)
 
 // @namespace       https://tampermonkey.net/
 
-// @version         39.0
+// @version         40.0
 
-// @description     Adds conservative StartupLearners step-state guards so VPlink-style flows do not spin on repeated Step 1/3 pages.
+// @description     Restores V38 fast flow behavior and adds optional proxy-first universal pattern detection for similar shortlink pages.
 
 // @author          rehan & Pankaj034
 
@@ -48,9 +48,9 @@
 
         const isIframe = window.top !== window.self;
 
-        const DEFAULTS = { enabled: false, skipTimers: true, speed: 15, aggroBypass: true, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: true, autoClick: false, autoFlowSkip: false, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0, menuLeft: '', menuTop: '', menuExpanded: true };
+        const DEFAULTS = { enabled: false, skipTimers: true, speed: 15, aggroBypass: true, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: true, autoClick: false, autoFlowSkip: false, universalFlow: false, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0, menuLeft: '', menuTop: '', menuExpanded: true };
 
-        const PROFILE_KEYS = ['enabled', 'skipTimers', 'speed', 'aggroBypass', 'smartVerifyFlow', 'waitUntilTimerMoves', 'safeCountdownMode', 'videoSpeed', 'autoClick', 'autoFlowSkip', 'antiAdblock', 'highlight', 'pinMode', 'topOffset'];
+        const PROFILE_KEYS = ['enabled', 'skipTimers', 'speed', 'aggroBypass', 'smartVerifyFlow', 'waitUntilTimerMoves', 'safeCountdownMode', 'videoSpeed', 'autoClick', 'autoFlowSkip', 'universalFlow', 'antiAdblock', 'highlight', 'pinMode', 'topOffset'];
 
         const SITE_KEY = (location.hostname || (location.protocol === 'file:' ? 'local-file' : location.host) || 'unknown-site').toLowerCase();
 
@@ -462,7 +462,7 @@
 
                 <div id="th-header" style="display:flex; justify-content:space-between; align-items:center; cursor:grab; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; margin-bottom:10px;">
 
-                    <span style="font-weight:900; color:#00ffcc; font-size:14px;">⚡ Time Hooker V39.0</span>
+                    <span style="font-weight:900; color:#00ffcc; font-size:14px;">⚡ Time Hooker V40.0</span>
 
                     <button id="th-toggle-btn" style="all:unset; cursor:pointer; background:rgba(255,255,255,0.15); border-radius:6px; padding:2px 10px;">${S.menuExpanded ? '−' : '+'}</button>
 
@@ -489,6 +489,8 @@
                     <label style="color:#ffffff; font-weight:bold;"><input type="checkbox" id="t-autoclick" ${S.autoClick?'checked':''}> [✓] Auto Click Target</label>
 
                     <label style="color:#9ee9ff; font-weight:bold;"><input type="checkbox" id="t-flow" ${S.autoFlowSkip?'checked':''}> Auto Flow Skip</label>
+
+                    <label style="color:#ffd58a; font-weight:bold;"><input type="checkbox" id="t-universal" ${S.universalFlow?'checked':''}> Universal Pattern Mode</label>
 
                     <label><input type="checkbox" id="t-highlight" ${S.highlight?'checked':''}> Highlight Original</label>
 
@@ -662,7 +664,7 @@
 
             const bind = (id, key) => { $(id).onchange = (e) => { S[key] = e.target.checked; setS(S); if (key === 'aggroBypass' && S[key]) window.th_live_aggro_request = Date.now(); }; };
 
-            bind("t-skip", "skipTimers"); bind("t-aggro", "aggroBypass"); bind("t-video", "videoSpeed"); bind("t-antiad", "antiAdblock"); bind("t-autoclick", "autoClick"); bind("t-flow", "autoFlowSkip"); bind("t-highlight", "highlight"); bind("t-pin", "pinMode");
+            bind("t-skip", "skipTimers"); bind("t-aggro", "aggroBypass"); bind("t-video", "videoSpeed"); bind("t-antiad", "antiAdblock"); bind("t-autoclick", "autoClick"); bind("t-flow", "autoFlowSkip"); bind("t-universal", "universalFlow"); bind("t-highlight", "highlight"); bind("t-pin", "pinMode");
 
             $("t-speed").oninput = (e) => { S.speed = e.target.value; setS(S); window.pankajSpeed = parseFloat(S.speed); const lab = $("t-speed-label"); if (lab) lab.textContent = S.speed + "x"; if (window.isProActive && window.setPankajProSpeed) window.setPankajProSpeed(parseFloat(S.speed)); };
 
@@ -697,6 +699,8 @@
                 $("t-autoclick").checked = !!S.autoClick;
 
                 $("t-flow").checked = !!S.autoFlowSkip;
+
+                $("t-universal").checked = !!S.universalFlow;
 
                 $("t-highlight").checked = !!S.highlight;
 
@@ -1644,146 +1648,6 @@
 
         }
 
-        function getStepStateKey() {
-
-            return 'th_vplink_step_state_' + getVplinkAlias();
-
-        }
-
-        function getStepState() {
-
-            try {
-
-                const state = JSON.parse(sessionStorage.getItem(getStepStateKey()) || '{}');
-
-                if (!state || typeof state !== 'object') return {};
-
-                if (state.updatedAt && Date.now() - state.updatedAt > 30 * 60 * 1000) return {};
-
-                state.counts = (state.counts && typeof state.counts === 'object') ? state.counts : {};
-
-                return state;
-
-            } catch(e) { return {}; }
-
-        }
-
-        function saveStepState(state) {
-
-            try {
-
-                state.updatedAt = Date.now();
-
-                sessionStorage.setItem(getStepStateKey(), JSON.stringify(state));
-
-            } catch(e) {}
-
-        }
-
-        function getStepSignature(info) {
-
-            const step = info && info.current && info.total ? (info.current + '/' + info.total) : 'unknown';
-
-            return [location.hostname, step].join('|');
-
-        }
-
-        function rememberStepVisit(info) {
-
-            const state = getStepState();
-
-            const signature = getStepSignature(info);
-
-            const url = normalizeFlowUrl(location.href);
-
-            if (state.lastStepUrl !== url || state.lastStepSignature !== signature) {
-
-                state.counts[signature] = (state.counts[signature] || 0) + 1;
-
-                state.lastStepUrl = url;
-
-                state.lastStepSignature = signature;
-
-                saveStepState(state);
-
-            }
-
-            return { state, signature, visits: state.counts[signature] || 1 };
-
-        }
-
-        function markStepVerified(info, href) {
-
-            const state = getStepState();
-
-            state.verified = {
-
-                signature: getStepSignature(info),
-
-                url: normalizeFlowUrl(location.href),
-
-                href: normalizeFlowUrl(href || ''),
-
-                at: Date.now()
-
-            };
-
-            saveStepState(state);
-
-            return state.verified;
-
-        }
-
-        function getStepVerified(info, href) {
-
-            const state = getStepState();
-
-            const verified = state.verified || {};
-
-            const normalizedHref = normalizeFlowUrl(href || '');
-
-            if (verified.signature !== getStepSignature(info)) return null;
-
-            if (verified.url !== normalizeFlowUrl(location.href)) return null;
-
-            if (normalizedHref && verified.href && verified.href !== normalizedHref) return null;
-
-            return verified;
-
-        }
-
-        function blockStepAutomation(info) {
-
-            const state = getStepState();
-
-            state.blockedSignature = getStepSignature(info);
-
-            saveStepState(state);
-
-        }
-
-        function isStepAutomationBlocked(info) {
-
-            const state = getStepState();
-
-            return state.blockedSignature === getStepSignature(info);
-
-        }
-
-        function setStartupLearnersCompatGate() {
-
-            if (!/startuplearners\.com$/i.test(location.hostname)) return;
-
-            try {
-
-                document.cookie = "eonudb=insurance,online_colleges,study_abroad,finance,loan; max-age=200; path=/;";
-
-                localStorage.setItem("iorghupt", String(Date.now() - 12000));
-
-            } catch(e) {}
-
-        }
-
         function setProxyStatus(proxy, text) {
 
             if (!S.pinMode || !document.body) return proxy;
@@ -1928,45 +1792,11 @@
 
                 prepareStepFlow(stepInfo);
 
-                setStartupLearnersCompatGate();
-
                 const stepLabel = stepInfo.current && stepInfo.total ? ('FLOW: Step ' + stepInfo.current + '/' + stepInfo.total) : 'FLOW: verify';
 
-                const stepVisit = rememberStepVisit(stepInfo);
-
-                proxy = setProxyStatus(proxy, stepLabel);
+                setProxyStatus(proxy, stepLabel);
 
                 window.th_gate_status = stepLabel;
-
-                if (proxy) {
-
-                    proxy.onclick = () => {
-
-                        if (stepInfo.btn6 && document.contains(stepInfo.btn6)) {
-
-                            try { if (typeof window.nextbtn === 'function') window.nextbtn(); else simulateClick(stepInfo.btn6); } catch(e) { simulateClick(stepInfo.btn6); }
-
-                            return;
-
-                        }
-
-                        if (stepInfo.btn7 && document.contains(stepInfo.btn7)) clickIntermediateFlowTarget(stepInfo.btn7);
-
-                    };
-
-                }
-
-                if (isStepAutomationBlocked(stepInfo) || stepVisit.visits >= 4) {
-
-                    blockStepAutomation(stepInfo);
-
-                    window.th_gate_status = 'STEP LOOP: manual';
-
-                    setProxyStatus(proxy, 'STEP LOOP: manual');
-
-                    return true;
-
-                }
 
                 if (stepInfo.btn6 && !stepInfo.btn6.dataset.thFlowClicked) {
 
@@ -1978,13 +1808,7 @@
 
                         try { if (typeof window.nextbtn === 'function') window.nextbtn(); else simulateClick(stepInfo.btn6); } catch(e) { simulateClick(stepInfo.btn6); }
 
-                        markStepVerified(stepInfo, stepInfo.btn7 && stepInfo.btn7.href);
-
                     }, 250);
-
-                    window.th_gate_status = stepLabel + ' verify';
-
-                    setProxyStatus(proxy, stepLabel + ' verify');
 
                     return true;
 
@@ -1999,18 +1823,6 @@
                         window.th_gate_status = 'FINAL LINK: manual';
 
                         setProxyStatus(proxy, 'FINAL LINK: manual');
-
-                        return true;
-
-                    }
-
-                    const verified = getStepVerified(stepInfo, href);
-
-                    if (!verified || Date.now() - verified.at < 3000) {
-
-                        window.th_gate_status = stepLabel + ' waiting state';
-
-                        setProxyStatus(proxy, stepLabel + ' waiting');
 
                         return true;
 
@@ -2047,6 +1859,268 @@
             }
 
             return false;
+
+        }
+
+        function shouldRunUniversalFlow() {
+
+            return !!(S.enabled && S.autoFlowSkip && S.universalFlow && !isVplinkChainHost());
+
+        }
+
+        function isSafeUniversalFlowUrl(url) {
+
+            try {
+
+                const u = new URL(url, location.href);
+
+                if (!/^https?:$/i.test(u.protocol)) return false;
+
+                if (isTelegramHref(u.href)) return false;
+
+                if (u.hostname === location.hostname) return true;
+
+                return isSafeVplinkFlowUrl(u.href);
+
+            } catch(e) { return false; }
+
+        }
+
+        function isFinalUniversalUrl(url) {
+
+            try {
+
+                const u = new URL(url, location.href);
+
+                if (isTelegramHref(u.href)) return true;
+
+                if (u.hostname !== location.hostname && !isSafeVplinkFlowUrl(u.href)) return true;
+
+                return /(?:\/(?:go|final|links\/go)(?:\/|$)|[?&](?:final|destination|target)=)/i.test(u.pathname + u.search);
+
+            } catch(e) { return true; }
+
+        }
+
+        function setUniversalManual(proxy, label, el) {
+
+            proxy = setProxyStatus(proxy, label);
+
+            window.th_gate_status = label;
+
+            if (proxy && el) {
+
+                proxy.onclick = () => {
+
+                    if (!S.enabled || !S.universalFlow) return;
+
+                    revealFlowElement(el);
+
+                    clickIntermediateFlowTarget(el);
+
+                };
+
+            }
+
+            return true;
+
+        }
+
+        function navigateUniversalUrl(url, label, proxy) {
+
+            const target = normalizeFlowUrl(url);
+
+            if (!target || !isSafeUniversalFlowUrl(target)) return false;
+
+            if (isFinalUniversalUrl(target)) {
+
+                window.th_gate_status = 'FINAL LINK: manual';
+
+                setProxyStatus(proxy, 'FINAL LINK: manual');
+
+                return true;
+
+            }
+
+            if (countFlowVisits(target) >= 3) {
+
+                window.th_gate_status = 'UNIVERSAL LOOP: manual';
+
+                setProxyStatus(proxy, 'UNIVERSAL LOOP: manual');
+
+                return true;
+
+            }
+
+            rememberFlowHop(target, label);
+
+            window.th_gate_status = label || 'UNIVERSAL: next';
+
+            setProxyStatus(proxy, label || 'UNIVERSAL: next');
+
+            (window.th_nativeSetTimeout || setTimeout)(() => {
+
+                if (shouldRunUniversalFlow()) location.href = target;
+
+            }, 300);
+
+            return true;
+
+        }
+
+        function getUniversalActionCandidates() {
+
+            const selectors = [
+
+                '#btn6', '#btn7', '#tp-snp2', '#tp98', '#cross-snp2', '#startCountdownBtn',
+
+                'a[href]', 'button', 'input[type="button"]', 'input[type="submit"]'
+
+            ];
+
+            return Array.from(document.querySelectorAll(selectors.join(','))).filter(el => {
+
+                if (!el || isOwnUi(el) || isDisabledAction(el)) return false;
+
+                const text = getActionText(el).toLowerCase();
+
+                const href = el.href || (el.closest && el.closest('a') && el.closest('a').href) || '';
+
+                if (INVALID_TARGET_TEXT.some(k => text.includes(k))) return false;
+
+                if (isTelegramHref(href)) return true;
+
+                if (/^(btn6|btn7|tp-snp2|tp98|cross-snp2|startCountdownBtn)$/i.test(el.id || '')) return true;
+
+                return VALID_TARGET_TEXT.some(k => text.includes(k)) || /continue|verify|get\s*link|download\s*link|open\s*link/i.test(text);
+
+            });
+
+        }
+
+        function getBestUniversalAction() {
+
+            const candidates = getUniversalActionCandidates();
+
+            let best = null;
+
+            let bestScore = -1;
+
+            candidates.forEach(el => {
+
+                revealFlowElement(el);
+
+                const text = getActionText(el).toLowerCase();
+
+                const href = el.href || (el.closest && el.closest('a') && el.closest('a').href) || '';
+
+                let score = 10;
+
+                if (/^(btn7|tp-snp2|tp98|cross-snp2)$/i.test(el.id || '')) score += 80;
+
+                if (/^(btn6|startCountdownBtn)$/i.test(el.id || '')) score += 65;
+
+                if (/get\s*link|download\s*link|open\s*link/.test(text)) score += 50;
+
+                if (/continue|verify|click\s*to\s*verify/.test(text)) score += 40;
+
+                if (href && isSafeUniversalFlowUrl(href)) score += 25;
+
+                if (href && isFinalUniversalUrl(href)) score -= 90;
+
+                if (isVisibleAction(el)) score += 10;
+
+                if (score > bestScore) { bestScore = score; best = el; }
+
+            });
+
+            return { el: best, score: bestScore };
+
+        }
+
+        function maybeRunUniversalPatternFlow(proxy) {
+
+            if (!shouldRunUniversalFlow() || !document.body) return false;
+
+            const bodyText = (document.body.innerText || '').replace(/\s+/g, ' ').toLowerCase();
+
+            const hasFlowShape = /step\s*[0-9]+\s*\/\s*[0-9]+|you are currently on step|please\s+wait\s+\d{1,3}\s*seconds?|count(?:ing)?\s*down|click\s+(?:to\s+)?verify|click\s+any\s+image|skip\s+timer|get\s+link/i.test(bodyText) || !!(document.getElementById('btn6') || document.getElementById('btn7') || document.getElementById('tp-snp2'));
+
+            if (!hasFlowShape) return false;
+
+            const redirectTarget = getScriptRedirectTarget();
+
+            if (redirectTarget && isSafeUniversalFlowUrl(redirectTarget)) {
+
+                return navigateUniversalUrl(redirectTarget, 'UNIVERSAL: redirect', proxy);
+
+            }
+
+            const stepInfo = getStepFlowInfo();
+
+            if (stepInfo) {
+
+                prepareStepFlow(stepInfo);
+
+                const stepLabel = stepInfo.current && stepInfo.total ? ('UNIVERSAL: Step ' + stepInfo.current + '/' + stepInfo.total) : 'UNIVERSAL: verify';
+
+                if (stepInfo.btn6 && !stepInfo.btn6.dataset.thUniversalClicked) {
+
+                    stepInfo.btn6.dataset.thUniversalClicked = '1';
+
+                    setProxyStatus(proxy, stepLabel);
+
+                    (window.th_nativeSetTimeout || setTimeout)(() => {
+
+                        if (!shouldRunUniversalFlow() || !document.contains(stepInfo.btn6)) return;
+
+                        try { if (typeof window.nextbtn === 'function') window.nextbtn(); else simulateClick(stepInfo.btn6); } catch(e) { simulateClick(stepInfo.btn6); }
+
+                    }, 250);
+
+                    return true;
+
+                }
+
+                if (stepInfo.btn7) {
+
+                    const href = stepInfo.btn7.href || '';
+
+                    if (href && isSafeUniversalFlowUrl(href) && !isFinalUniversalUrl(href)) return navigateUniversalUrl(href, 'UNIVERSAL: Continue', proxy);
+
+                    return setUniversalManual(proxy, 'UNIVERSAL: proxy click', stepInfo.btn7);
+
+                }
+
+                return true;
+
+            }
+
+            const safeCountdownState = getSafeCountdownState();
+
+            if (safeCountdownState.detected) finishSafeCountdown(safeCountdownState);
+
+            const found = getBestUniversalAction();
+
+            if (!found.el || found.score < 55) {
+
+                window.th_gate_status = 'LOW CONFIDENCE: manual';
+
+                setProxyStatus(proxy, 'LOW CONFIDENCE: manual');
+
+                return true;
+
+            }
+
+            const href = found.el.href || (found.el.closest && found.el.closest('a') && found.el.closest('a').href) || '';
+
+            if (href && isSafeUniversalFlowUrl(href) && !isFinalUniversalUrl(href) && found.score >= 90) {
+
+                return navigateUniversalUrl(href, 'UNIVERSAL: timer continue', proxy);
+
+            }
+
+            return setUniversalManual(proxy, 'UNIVERSAL: proxy click', found.el);
 
         }
 
@@ -2479,6 +2553,8 @@
             if (maybeSkipSchemeProArticle(proxy)) return;
 
             if (maybeRunVplinkChain(proxy)) return;
+
+            if (maybeRunUniversalPatternFlow(proxy)) return;
 
             window.th_skipTimersEnabled = !!S.skipTimers;
 

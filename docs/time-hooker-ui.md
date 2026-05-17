@@ -11,6 +11,7 @@ The floating panel is designed for mobile browser users.
 - `Kill Ad Overlays`: hides common ad overlays and closeable blockers.
 - `Auto Click Target`: enables automatic intermediate flow clicks.
 - `Auto Flow Skip`: enables safe redirect/timer/continue flow movement on supported chains.
+- `Universal Pattern Mode`: enables proxy-first pattern detection on unknown sites with similar timer/verify/continue pages.
 - `Highlight Original`: outlines the real detected target.
 - `Pin Fake Button`: shows a large floating proxy button.
 
@@ -33,4 +34,8 @@ On `sb1.schemepro.org` and `sb2.schemepro.org`, Time Hooker can skip article ste
 
 ## VPlink Chain
 
-On VPlink-style chains, Time Hooker can move through safe intermediate pages such as DarkGuruji and StartupLearners redirects, timer gates, and hidden Continue buttons. StartupLearners step pages wait briefly after verify before following Continue. Final destinations remain manual, and repeated article loops stop with `STEP LOOP: manual` or `FLOW LOOP: manual`.
+On VPlink-style chains, Time Hooker can move through safe intermediate pages such as DarkGuruji and StartupLearners redirects, timer gates, and hidden Continue buttons using the faster V38-style flow. Final destinations remain manual, and repeated URL loops stop with `FLOW LOOP: manual`.
+
+## Universal Pattern Mode
+
+Universal Pattern Mode is OFF by default. When enabled, unknown domains are scanned for common shortlink page shapes such as step counters, timer text, hidden Continue buttons, and inline JavaScript redirects. It keeps final, external, and Telegram-style links manual.

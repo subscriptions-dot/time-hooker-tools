@@ -22,6 +22,7 @@ Time Hooker is a mobile-friendly userscript for Violentmonkey/Tampermonkey. It h
 - Floating `CLICK` proxy button for real targets
 - `Auto Click Target` toggle with safety locks
 - `Auto Flow Skip` for safe intermediate redirect/timer/continue pages
+- Optional `Universal Pattern Mode` for unknown sites that use the same shortlink page patterns
 - Final-link guard for VPlink/Telegram pages
 - Direct SchemePro article-chain skipping by decoding safe page targets
 - Per-site saved settings and built-in profiles
@@ -43,7 +44,9 @@ On SchemePro chains, Time Hooker reads the page-provided encoded next-step URL a
 
 No userscript can guarantee every shortlink site because many use different backend, ad, session, and anti-bot logic. Time Hooker focuses on safe, inspectable page actions and avoids clicking ad iframes.
 
-VPlink-style chains can include multiple article hops across DarkGuruji and StartupLearners. Time Hooker follows safe page redirects and reveals page-owned Continue buttons, waits for StartupLearners step state after verify, and stops if the same article step repeats.
+VPlink-style chains can include multiple article hops across DarkGuruji and StartupLearners. Time Hooker follows safe page redirects and reveals page-owned Continue buttons with the faster V38-style flow.
+
+Universal Pattern Mode can be enabled for new sites that look like the same timer/verify/continue pattern. It is off by default and uses a proxy-first safety model on unknown domains, so final or external destination links stay manual.
 
 ## HROne Punch Timer
 
@@ -104,6 +107,7 @@ ZIP package: `dist/local-link-resolver.zip`
 - Final LinkShortify Turnstile/Captcha checks remain manual by design.
 - Auto mode is controlled by the `Auto Click Target` checkbox.
 - Intermediate shortlink flow movement is controlled by `Auto Flow Skip`.
+- Unknown-site pattern matching is controlled by `Universal Pattern Mode`.
 - Ad iframe clicks are intentionally avoided.
 - Old versions of similar scripts should be disabled before testing.
 
