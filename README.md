@@ -21,6 +21,7 @@ Time Hooker is a mobile-friendly userscript for Violentmonkey/Tampermonkey. It h
 - Fast-forward supported countdown timers
 - Floating `CLICK` proxy button for real targets
 - `Auto Click Target` toggle with safety locks
+- `Auto Flow Skip` for safe intermediate redirect/timer/continue pages
 - Final-link guard for VPlink/Telegram pages
 - Direct SchemePro article-chain skipping by decoding safe page targets
 - Per-site saved settings and built-in profiles
@@ -41,6 +42,8 @@ The current rules are strongest on the inspected families:
 On SchemePro chains, Time Hooker reads the page-provided encoded next-step URL and moves through the article steps without clicking ads. Final LinkShortify pages may still require a real Turnstile/Captcha token before the destination can be released.
 
 No userscript can guarantee every shortlink site because many use different backend, ad, session, and anti-bot logic. Time Hooker focuses on safe, inspectable page actions and avoids clicking ad iframes.
+
+VPlink-style chains can include multiple article hops across DarkGuruji and StartupLearners. Time Hooker follows safe page redirects and reveals page-owned Continue buttons, but it stops if the same article loop repeats.
 
 ## HROne Punch Timer
 
@@ -100,6 +103,7 @@ ZIP package: `dist/local-link-resolver.zip`
 - Final VPlink/Telegram links are manual by design.
 - Final LinkShortify Turnstile/Captcha checks remain manual by design.
 - Auto mode is controlled by the `Auto Click Target` checkbox.
+- Intermediate shortlink flow movement is controlled by `Auto Flow Skip`.
 - Ad iframe clicks are intentionally avoided.
 - Old versions of similar scripts should be disabled before testing.
 

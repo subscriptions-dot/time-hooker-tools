@@ -10,6 +10,7 @@ The floating panel is designed for mobile browser users.
 - `Aggro Bypass`: attempts a one-time safe finish/reveal on known gates.
 - `Kill Ad Overlays`: hides common ad overlays and closeable blockers.
 - `Auto Click Target`: enables automatic intermediate flow clicks.
+- `Auto Flow Skip`: enables safe redirect/timer/continue flow movement on supported chains.
 - `Highlight Original`: outlines the real detected target.
 - `Pin Fake Button`: shows a large floating proxy button.
 
@@ -29,3 +30,7 @@ Final LinkShortify pages with Cloudflare Turnstile are also manual. The proxy sh
 ## SchemePro Skipper
 
 On `sb1.schemepro.org` and `sb2.schemepro.org`, Time Hooker can skip article steps by decoding the page's own next-step URL. This does not click ad iframes or disabled wait buttons.
+
+## VPlink Chain
+
+On VPlink-style chains, Time Hooker can move through safe intermediate pages such as DarkGuruji and StartupLearners redirects, timer gates, and hidden Continue buttons. Final destinations remain manual, and repeated article loops stop with a visible status.

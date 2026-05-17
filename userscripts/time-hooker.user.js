@@ -1,12 +1,12 @@
 // ==UserScript==
 
-// @name            Time Hooker (V37.0 - SchemePro Chain Skipper)
+// @name            Time Hooker (V38.0 - VPlink Multi-Hop Flow)
 
 // @namespace       https://tampermonkey.net/
 
-// @version         37.0
+// @version         38.0
 
-// @description     Skips SchemePro article chains safely by decoding page targets; final LinkShortify stays token-aware/manual.
+// @description     Adds safe VPlink/DarkGuruji/StartupLearners multi-hop flow skipping while final links stay manual.
 
 // @author          rehan & Pankaj034
 
@@ -48,31 +48,31 @@
 
         const isIframe = window.top !== window.self;
 
-        const DEFAULTS = { enabled: false, skipTimers: true, speed: 15, aggroBypass: true, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: true, autoClick: false, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0, menuLeft: '', menuTop: '', menuExpanded: true };
+        const DEFAULTS = { enabled: false, skipTimers: true, speed: 15, aggroBypass: true, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: true, autoClick: false, autoFlowSkip: false, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0, menuLeft: '', menuTop: '', menuExpanded: true };
 
-        const PROFILE_KEYS = ['enabled', 'skipTimers', 'speed', 'aggroBypass', 'smartVerifyFlow', 'waitUntilTimerMoves', 'safeCountdownMode', 'videoSpeed', 'autoClick', 'antiAdblock', 'highlight', 'pinMode', 'topOffset'];
+        const PROFILE_KEYS = ['enabled', 'skipTimers', 'speed', 'aggroBypass', 'smartVerifyFlow', 'waitUntilTimerMoves', 'safeCountdownMode', 'videoSpeed', 'autoClick', 'autoFlowSkip', 'antiAdblock', 'highlight', 'pinMode', 'topOffset'];
 
         const SITE_KEY = (location.hostname || (location.protocol === 'file:' ? 'local-file' : location.host) || 'unknown-site').toLowerCase();
 
         const BUILTIN_SITE_PROFILES = {
 
-            'sb1.schemepro.org': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, videoSpeed: false, autoClick: false, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 },
+            'sb1.schemepro.org': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, videoSpeed: false, autoClick: false, autoFlowSkip: true, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 },
 
-            'sb2.schemepro.org': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, videoSpeed: false, autoClick: false, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 },
+            'sb2.schemepro.org': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, videoSpeed: false, autoClick: false, autoFlowSkip: true, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 },
 
-            'lksfy.com': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, smartVerifyFlow: false, waitUntilTimerMoves: false, videoSpeed: false, autoClick: false, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 },
+            'lksfy.com': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, smartVerifyFlow: false, waitUntilTimerMoves: false, videoSpeed: false, autoClick: false, autoFlowSkip: false, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 },
 
-            'darkguruji.com': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: false, autoClick: false, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 },
+            'darkguruji.com': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: false, autoClick: false, autoFlowSkip: true, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 },
 
-            'startuplearners.com': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: false, autoClick: false, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 },
+            'startuplearners.com': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: false, autoClick: false, autoFlowSkip: true, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 },
 
-            'privatejobbeta.com': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: false, autoClick: false, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 },
+            'privatejobbeta.com': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: false, autoClick: false, autoFlowSkip: true, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 },
 
-            'rempo.xyz': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: false, autoClick: false, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 },
+            'rempo.xyz': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: false, autoClick: false, autoFlowSkip: true, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 },
 
-            'genas.xyz': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: false, autoClick: false, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 },
+            'genas.xyz': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: false, autoClick: false, autoFlowSkip: true, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 },
 
-            'vplink.in': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: false, autoClick: false, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 }
+            'vplink.in': { enabled: true, skipTimers: true, speed: 15, aggroBypass: false, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: false, autoClick: false, autoFlowSkip: true, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 }
 
         };
 
@@ -123,6 +123,12 @@
         let suggestedProfile = !activeProfile && !!BUILTIN_SITE_PROFILES[SITE_KEY] && !(store.disabledBuiltins && store.disabledBuiltins[SITE_KEY]);
 
         let S = Object.assign({}, DEFAULTS, store.global, suggestedProfile ? BUILTIN_SITE_PROFILES[SITE_KEY] : {}, activeProfile ? store.profiles[SITE_KEY] : {});
+
+        if (activeProfile && store.profiles[SITE_KEY] && !Object.prototype.hasOwnProperty.call(store.profiles[SITE_KEY], 'autoFlowSkip') && BUILTIN_SITE_PROFILES[SITE_KEY]) {
+
+            S.autoFlowSkip = !!BUILTIN_SITE_PROFILES[SITE_KEY].autoFlowSkip;
+
+        }
 
         S.smartVerifyFlow = false;
 
@@ -456,7 +462,7 @@
 
                 <div id="th-header" style="display:flex; justify-content:space-between; align-items:center; cursor:grab; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; margin-bottom:10px;">
 
-                    <span style="font-weight:900; color:#00ffcc; font-size:14px;">⚡ Time Hooker V37.0</span>
+                    <span style="font-weight:900; color:#00ffcc; font-size:14px;">⚡ Time Hooker V38.0</span>
 
                     <button id="th-toggle-btn" style="all:unset; cursor:pointer; background:rgba(255,255,255,0.15); border-radius:6px; padding:2px 10px;">${S.menuExpanded ? '−' : '+'}</button>
 
@@ -481,6 +487,8 @@
                     <label><input type="checkbox" id="t-antiad" ${S.antiAdblock?'checked':''}> Kill Ad Overlays</label>
 
                     <label style="color:#ffffff; font-weight:bold;"><input type="checkbox" id="t-autoclick" ${S.autoClick?'checked':''}> [✓] Auto Click Target</label>
+
+                    <label style="color:#9ee9ff; font-weight:bold;"><input type="checkbox" id="t-flow" ${S.autoFlowSkip?'checked':''}> Auto Flow Skip</label>
 
                     <label><input type="checkbox" id="t-highlight" ${S.highlight?'checked':''}> Highlight Original</label>
 
@@ -654,7 +662,7 @@
 
             const bind = (id, key) => { $(id).onchange = (e) => { S[key] = e.target.checked; setS(S); if (key === 'aggroBypass' && S[key]) window.th_live_aggro_request = Date.now(); }; };
 
-            bind("t-skip", "skipTimers"); bind("t-aggro", "aggroBypass"); bind("t-video", "videoSpeed"); bind("t-antiad", "antiAdblock"); bind("t-autoclick", "autoClick"); bind("t-highlight", "highlight"); bind("t-pin", "pinMode");
+            bind("t-skip", "skipTimers"); bind("t-aggro", "aggroBypass"); bind("t-video", "videoSpeed"); bind("t-antiad", "antiAdblock"); bind("t-autoclick", "autoClick"); bind("t-flow", "autoFlowSkip"); bind("t-highlight", "highlight"); bind("t-pin", "pinMode");
 
             $("t-speed").oninput = (e) => { S.speed = e.target.value; setS(S); window.pankajSpeed = parseFloat(S.speed); const lab = $("t-speed-label"); if (lab) lab.textContent = S.speed + "x"; if (window.isProActive && window.setPankajProSpeed) window.setPankajProSpeed(parseFloat(S.speed)); };
 
@@ -687,6 +695,8 @@
                 $("t-antiad").checked = !!S.antiAdblock;
 
                 $("t-autoclick").checked = !!S.autoClick;
+
+                $("t-flow").checked = !!S.autoFlowSkip;
 
                 $("t-highlight").checked = !!S.highlight;
 
@@ -766,6 +776,12 @@
 
         }
 
+        function shouldSkipFlow() {
+
+            return !!(S.enabled && S.autoFlowSkip);
+
+        }
+
         function isTelegramHref(href) {
 
             return /^https?:\/\/(t\.me|telegram\.me)\//i.test(href || '');
@@ -805,6 +821,26 @@
             }
 
             simulateClick(el);
+
+        }
+
+        function clickIntermediateFlowTarget(el) {
+
+            if (!el) return false;
+
+            const href = el.href || (el.closest && el.closest('a') && el.closest('a').href) || '';
+
+            if (isTelegramHref(href) || isFinalVplinkTarget(el)) {
+
+                window.th_gate_status = 'Final link ready: manual click';
+
+                return false;
+
+            }
+
+            clickFlowTarget(el, false);
+
+            return true;
 
         }
 
@@ -1516,6 +1552,312 @@
 
         }
 
+        function isVplinkChainHost() {
+
+            return /(^|\.)((vplink\.in)|(darkguruji\.com)|(startuplearners\.com)|(privatejobbeta\.com)|(rempo\.xyz)|(genas\.xyz))$/i.test(location.hostname);
+
+        }
+
+        function getVplinkAlias() {
+
+            const cookieAlias = getCookieValue('gt_uc_') || getCookieValue('user_in');
+
+            if (cookieAlias) return cookieAlias;
+
+            const query = location.search || '';
+
+            const m = query.match(/(?:^|[?&])[^=]*=([A-Za-z0-9_-]{5,})/);
+
+            if (m) return m[1];
+
+            const path = location.pathname.split('/').filter(Boolean).pop() || '';
+
+            return /^[A-Za-z0-9_-]{5,}$/.test(path) ? path : 'unknown';
+
+        }
+
+        function normalizeFlowUrl(url) {
+
+            try {
+
+                const u = new URL(url, location.href);
+
+                u.hash = '';
+
+                return u.href.replace(/\/$/, '');
+
+            } catch(e) { return ''; }
+
+        }
+
+        function isSafeVplinkFlowUrl(url) {
+
+            try {
+
+                const u = new URL(url, location.href);
+
+                return /(^|\.)((vplink\.in)|(darkguruji\.com)|(startuplearners\.com)|(privatejobbeta\.com)|(rempo\.xyz)|(genas\.xyz))$/i.test(u.hostname);
+
+            } catch(e) { return false; }
+
+        }
+
+        function getFlowTraceKey() {
+
+            return 'th_vplink_flow_' + getVplinkAlias();
+
+        }
+
+        function getFlowTrace() {
+
+            try {
+
+                const trace = JSON.parse(sessionStorage.getItem(getFlowTraceKey()) || '[]');
+
+                return Array.isArray(trace) ? trace : [];
+
+            } catch(e) { return []; }
+
+        }
+
+        function countFlowVisits(url) {
+
+            const normalized = normalizeFlowUrl(url);
+
+            if (!normalized) return 0;
+
+            return getFlowTrace().filter(item => item && item.to === normalized).length;
+
+        }
+
+        function rememberFlowHop(to, label) {
+
+            try {
+
+                const trace = getFlowTrace();
+
+                trace.push({ from: normalizeFlowUrl(location.href), to: normalizeFlowUrl(to), label: label || '', at: Date.now() });
+
+                sessionStorage.setItem(getFlowTraceKey(), JSON.stringify(trace.slice(-14)));
+
+            } catch(e) {}
+
+        }
+
+        function setProxyStatus(proxy, text) {
+
+            if (!S.pinMode || !document.body) return proxy;
+
+            if (!proxy) {
+
+                proxy = document.createElement("button"); proxy.id = "th-proxy-btn";
+
+                proxy.style.cssText = "position: fixed !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 2147483647; padding: 15px 30px; font-weight: bold; background: linear-gradient(90deg, #ff0055, #ffaa00); color: white; border-radius: 10px; cursor: pointer;";
+
+                document.body.appendChild(proxy);
+
+            }
+
+            proxy.innerText = text;
+
+            proxy.style.top = S.topOffset + 'px';
+
+            proxy.style.display = 'block';
+
+            return proxy;
+
+        }
+
+        function navigateFlowUrl(url, label, proxy) {
+
+            const target = normalizeFlowUrl(url);
+
+            if (!target || !isSafeVplinkFlowUrl(target)) return false;
+
+            if (countFlowVisits(target) >= 3) {
+
+                window.th_gate_status = 'FLOW LOOP: manual';
+
+                setProxyStatus(proxy, 'FLOW LOOP: manual');
+
+                return true;
+
+            }
+
+            rememberFlowHop(target, label);
+
+            window.th_gate_status = label || 'FLOW: next';
+
+            setProxyStatus(proxy, label || 'FLOW: next');
+
+            (window.th_nativeSetTimeout || setTimeout)(() => {
+
+                if (shouldSkipFlow()) location.href = target;
+
+            }, 300);
+
+            return true;
+
+        }
+
+        function getScriptRedirectTarget() {
+
+            if (!document.documentElement) return '';
+
+            const html = document.documentElement.innerHTML || '';
+
+            const text = (document.body && document.body.innerText || '').replace(/\s+/g, ' ').toLowerCase();
+
+            if (!/(please wait|opening link|generating link|redirect after a delay|redirecting)/i.test(text)) return '';
+
+            const m = html.match(/(?:window|document)\.location(?:\.href)?\s*=\s*["']([^"']+)["']/i) || html.match(/document\.location\s*=\s*["']([^"']+)["']/i);
+
+            return m ? m[1] : '';
+
+        }
+
+        function getStepFlowInfo() {
+
+            if (!document.body) return null;
+
+            const bodyText = (document.body.innerText || '').replace(/\s+/g, ' ');
+
+            const stepMatch = bodyText.match(/step\s*([0-9]+)\s*\/\s*([0-9]+)/i);
+
+            const btn6 = document.getElementById('btn6');
+
+            const btn7 = document.getElementById('btn7');
+
+            if (!stepMatch && !btn6 && !btn7) return null;
+
+            return { current: stepMatch ? parseInt(stepMatch[1], 10) : 0, total: stepMatch ? parseInt(stepMatch[2], 10) : 0, btn6, btn7 };
+
+        }
+
+        function revealFlowElement(el) {
+
+            if (!el) return false;
+
+            [el, (el.closest && el.closest('a'))].forEach(node => {
+
+                if (!node || !node.style) return;
+
+                node.style.setProperty('display', node.tagName === 'A' ? 'inline-block' : 'block', 'important');
+
+                node.style.setProperty('visibility', 'visible', 'important');
+
+                node.style.setProperty('opacity', '1', 'important');
+
+                try { node.removeAttribute('disabled'); node.setAttribute('aria-disabled', 'false'); } catch(e) {}
+
+            });
+
+            return true;
+
+        }
+
+        function prepareStepFlow(info) {
+
+            ['ce-wait1', 'tp-wait1'].forEach(id => { const el = document.getElementById(id); if (el) el.style.setProperty('display', 'none', 'important'); });
+
+            ['ce-text', 'tp-generate'].forEach(id => { const el = document.getElementById(id); if (el) el.style.setProperty('display', 'block', 'important'); });
+
+            document.querySelectorAll("[id='loading-container'], #continue1").forEach(el => el.style.setProperty('display', 'none', 'important'));
+
+            if (info.btn6) revealFlowElement(info.btn6);
+
+            if (info.btn7) revealFlowElement(info.btn7);
+
+        }
+
+        function maybeRunVplinkChain(proxy) {
+
+            if (!shouldSkipFlow() || !isVplinkChainHost()) return false;
+
+            const redirectTarget = getScriptRedirectTarget();
+
+            if (redirectTarget && isSafeVplinkFlowUrl(redirectTarget)) {
+
+                return navigateFlowUrl(redirectTarget, 'FLOW: redirect', proxy);
+
+            }
+
+            const stepInfo = getStepFlowInfo();
+
+            if (stepInfo) {
+
+                prepareStepFlow(stepInfo);
+
+                const stepLabel = stepInfo.current && stepInfo.total ? ('FLOW: Step ' + stepInfo.current + '/' + stepInfo.total) : 'FLOW: verify';
+
+                setProxyStatus(proxy, stepLabel);
+
+                window.th_gate_status = stepLabel;
+
+                if (stepInfo.btn6 && !stepInfo.btn6.dataset.thFlowClicked) {
+
+                    stepInfo.btn6.dataset.thFlowClicked = '1';
+
+                    (window.th_nativeSetTimeout || setTimeout)(() => {
+
+                        if (!shouldSkipFlow() || !document.contains(stepInfo.btn6)) return;
+
+                        try { if (typeof window.nextbtn === 'function') window.nextbtn(); else simulateClick(stepInfo.btn6); } catch(e) { simulateClick(stepInfo.btn6); }
+
+                    }, 250);
+
+                    return true;
+
+                }
+
+                if (stepInfo.btn7) {
+
+                    const href = stepInfo.btn7.href || '';
+
+                    if (isTelegramHref(href) || /vplink\.in\/(?:links\/go|go|final)/i.test(href)) {
+
+                        window.th_gate_status = 'FINAL LINK: manual';
+
+                        setProxyStatus(proxy, 'FINAL LINK: manual');
+
+                        return true;
+
+                    }
+
+                    return navigateFlowUrl(href, 'FLOW: Continue', proxy);
+
+                }
+
+                return true;
+
+            }
+
+            const tpBtn = document.getElementById('tp-snp2');
+
+            if (tpBtn && document.getElementById('tp-time')) {
+
+                finishSafeCountdown(getSafeCountdownState());
+
+                if (tpBtn && (tpBtn.href || (tpBtn.closest && tpBtn.closest('a') && tpBtn.closest('a').href))) {
+
+                    const href = tpBtn.href || (tpBtn.closest && tpBtn.closest('a') && tpBtn.closest('a').href);
+
+                    return navigateFlowUrl(href, 'FLOW: timer continue', proxy);
+
+                }
+
+                window.th_gate_status = 'FLOW: timer ready';
+
+                setProxyStatus(proxy, 'FLOW: timer ready');
+
+                return true;
+
+            }
+
+            return false;
+
+        }
+
         function isSmartVerifyTarget(el, text) {
 
             return !!(S.smartVerifyFlow && text.includes('click to verify') && text.length <= 90 && isVisibleAction(el) && !isDisabledAction(el));
@@ -1943,6 +2285,8 @@
             }
 
             if (maybeSkipSchemeProArticle(proxy)) return;
+
+            if (maybeRunVplinkChain(proxy)) return;
 
             window.th_skipTimersEnabled = !!S.skipTimers;
 
