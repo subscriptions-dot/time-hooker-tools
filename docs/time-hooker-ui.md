@@ -33,4 +33,4 @@ On `sb1.schemepro.org` and `sb2.schemepro.org`, Time Hooker can skip article ste
 
 ## VPlink Chain
 
-On VPlink-style chains, Time Hooker can move through safe intermediate pages such as DarkGuruji and StartupLearners redirects, timer gates, and hidden Continue buttons. Final destinations remain manual, and repeated article loops stop with a visible status.
+On VPlink-style chains, Time Hooker can move through safe intermediate pages such as DarkGuruji and StartupLearners redirects, timer gates, and hidden Continue buttons. StartupLearners step pages wait briefly after verify before following Continue. Final destinations remain manual, and repeated article loops stop with `STEP LOOP: manual` or `FLOW LOOP: manual`.

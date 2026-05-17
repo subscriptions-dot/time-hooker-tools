@@ -1,12 +1,12 @@
 // ==UserScript==
 
-// @name            Time Hooker (V38.0 - VPlink Multi-Hop Flow)
+// @name            Time Hooker (V39.0 - StartupLearners Step-State Fix)
 
 // @namespace       https://tampermonkey.net/
 
-// @version         38.0
+// @version         39.0
 
-// @description     Adds safe VPlink/DarkGuruji/StartupLearners multi-hop flow skipping while final links stay manual.
+// @description     Adds conservative StartupLearners step-state guards so VPlink-style flows do not spin on repeated Step 1/3 pages.
 
 // @author          rehan & Pankaj034
 
@@ -462,7 +462,7 @@
 
                 <div id="th-header" style="display:flex; justify-content:space-between; align-items:center; cursor:grab; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; margin-bottom:10px;">
 
-                    <span style="font-weight:900; color:#00ffcc; font-size:14px;">⚡ Time Hooker V38.0</span>
+                    <span style="font-weight:900; color:#00ffcc; font-size:14px;">⚡ Time Hooker V39.0</span>
 
                     <button id="th-toggle-btn" style="all:unset; cursor:pointer; background:rgba(255,255,255,0.15); border-radius:6px; padding:2px 10px;">${S.menuExpanded ? '−' : '+'}</button>
 
@@ -1644,6 +1644,146 @@
 
         }
 
+        function getStepStateKey() {
+
+            return 'th_vplink_step_state_' + getVplinkAlias();
+
+        }
+
+        function getStepState() {
+
+            try {
+
+                const state = JSON.parse(sessionStorage.getItem(getStepStateKey()) || '{}');
+
+                if (!state || typeof state !== 'object') return {};
+
+                if (state.updatedAt && Date.now() - state.updatedAt > 30 * 60 * 1000) return {};
+
+                state.counts = (state.counts && typeof state.counts === 'object') ? state.counts : {};
+
+                return state;
+
+            } catch(e) { return {}; }
+
+        }
+
+        function saveStepState(state) {
+
+            try {
+
+                state.updatedAt = Date.now();
+
+                sessionStorage.setItem(getStepStateKey(), JSON.stringify(state));
+
+            } catch(e) {}
+
+        }
+
+        function getStepSignature(info) {
+
+            const step = info && info.current && info.total ? (info.current + '/' + info.total) : 'unknown';
+
+            return [location.hostname, step].join('|');
+
+        }
+
+        function rememberStepVisit(info) {
+
+            const state = getStepState();
+
+            const signature = getStepSignature(info);
+
+            const url = normalizeFlowUrl(location.href);
+
+            if (state.lastStepUrl !== url || state.lastStepSignature !== signature) {
+
+                state.counts[signature] = (state.counts[signature] || 0) + 1;
+
+                state.lastStepUrl = url;
+
+                state.lastStepSignature = signature;
+
+                saveStepState(state);
+
+            }
+
+            return { state, signature, visits: state.counts[signature] || 1 };
+
+        }
+
+        function markStepVerified(info, href) {
+
+            const state = getStepState();
+
+            state.verified = {
+
+                signature: getStepSignature(info),
+
+                url: normalizeFlowUrl(location.href),
+
+                href: normalizeFlowUrl(href || ''),
+
+                at: Date.now()
+
+            };
+
+            saveStepState(state);
+
+            return state.verified;
+
+        }
+
+        function getStepVerified(info, href) {
+
+            const state = getStepState();
+
+            const verified = state.verified || {};
+
+            const normalizedHref = normalizeFlowUrl(href || '');
+
+            if (verified.signature !== getStepSignature(info)) return null;
+
+            if (verified.url !== normalizeFlowUrl(location.href)) return null;
+
+            if (normalizedHref && verified.href && verified.href !== normalizedHref) return null;
+
+            return verified;
+
+        }
+
+        function blockStepAutomation(info) {
+
+            const state = getStepState();
+
+            state.blockedSignature = getStepSignature(info);
+
+            saveStepState(state);
+
+        }
+
+        function isStepAutomationBlocked(info) {
+
+            const state = getStepState();
+
+            return state.blockedSignature === getStepSignature(info);
+
+        }
+
+        function setStartupLearnersCompatGate() {
+
+            if (!/startuplearners\.com$/i.test(location.hostname)) return;
+
+            try {
+
+                document.cookie = "eonudb=insurance,online_colleges,study_abroad,finance,loan; max-age=200; path=/;";
+
+                localStorage.setItem("iorghupt", String(Date.now() - 12000));
+
+            } catch(e) {}
+
+        }
+
         function setProxyStatus(proxy, text) {
 
             if (!S.pinMode || !document.body) return proxy;
@@ -1788,11 +1928,45 @@
 
                 prepareStepFlow(stepInfo);
 
+                setStartupLearnersCompatGate();
+
                 const stepLabel = stepInfo.current && stepInfo.total ? ('FLOW: Step ' + stepInfo.current + '/' + stepInfo.total) : 'FLOW: verify';
 
-                setProxyStatus(proxy, stepLabel);
+                const stepVisit = rememberStepVisit(stepInfo);
+
+                proxy = setProxyStatus(proxy, stepLabel);
 
                 window.th_gate_status = stepLabel;
+
+                if (proxy) {
+
+                    proxy.onclick = () => {
+
+                        if (stepInfo.btn6 && document.contains(stepInfo.btn6)) {
+
+                            try { if (typeof window.nextbtn === 'function') window.nextbtn(); else simulateClick(stepInfo.btn6); } catch(e) { simulateClick(stepInfo.btn6); }
+
+                            return;
+
+                        }
+
+                        if (stepInfo.btn7 && document.contains(stepInfo.btn7)) clickIntermediateFlowTarget(stepInfo.btn7);
+
+                    };
+
+                }
+
+                if (isStepAutomationBlocked(stepInfo) || stepVisit.visits >= 4) {
+
+                    blockStepAutomation(stepInfo);
+
+                    window.th_gate_status = 'STEP LOOP: manual';
+
+                    setProxyStatus(proxy, 'STEP LOOP: manual');
+
+                    return true;
+
+                }
 
                 if (stepInfo.btn6 && !stepInfo.btn6.dataset.thFlowClicked) {
 
@@ -1804,7 +1978,13 @@
 
                         try { if (typeof window.nextbtn === 'function') window.nextbtn(); else simulateClick(stepInfo.btn6); } catch(e) { simulateClick(stepInfo.btn6); }
 
+                        markStepVerified(stepInfo, stepInfo.btn7 && stepInfo.btn7.href);
+
                     }, 250);
+
+                    window.th_gate_status = stepLabel + ' verify';
+
+                    setProxyStatus(proxy, stepLabel + ' verify');
 
                     return true;
 
@@ -1819,6 +1999,18 @@
                         window.th_gate_status = 'FINAL LINK: manual';
 
                         setProxyStatus(proxy, 'FINAL LINK: manual');
+
+                        return true;
+
+                    }
+
+                    const verified = getStepVerified(stepInfo, href);
+
+                    if (!verified || Date.now() - verified.at < 3000) {
+
+                        window.th_gate_status = stepLabel + ' waiting state';
+
+                        setProxyStatus(proxy, stepLabel + ' waiting');
 
                         return true;
 

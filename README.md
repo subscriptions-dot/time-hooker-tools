@@ -43,7 +43,7 @@ On SchemePro chains, Time Hooker reads the page-provided encoded next-step URL a
 
 No userscript can guarantee every shortlink site because many use different backend, ad, session, and anti-bot logic. Time Hooker focuses on safe, inspectable page actions and avoids clicking ad iframes.
 
-VPlink-style chains can include multiple article hops across DarkGuruji and StartupLearners. Time Hooker follows safe page redirects and reveals page-owned Continue buttons, but it stops if the same article loop repeats.
+VPlink-style chains can include multiple article hops across DarkGuruji and StartupLearners. Time Hooker follows safe page redirects and reveals page-owned Continue buttons, waits for StartupLearners step state after verify, and stops if the same article step repeats.
 
 ## HROne Punch Timer
 
