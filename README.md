@@ -8,6 +8,8 @@ This repository includes:
 - **HROne Punch Timer**: a lightweight Chrome extension that shows worked time and remaining time on HROne.
 - **Local Link Resolver**: a no-login local redirect helper for exact source-to-final URL rules.
 
+Optional backend resolver design: `docs/resolver-endpoint.md`
+
 Owner: **Pankaj**
 
 ## Time Hooker
@@ -20,6 +22,7 @@ Time Hooker is a mobile-friendly userscript for Violentmonkey/Tampermonkey. It h
 - Floating `CLICK` proxy button for real targets
 - `Auto Click Target` toggle with safety locks
 - Final-link guard for VPlink/Telegram pages
+- Direct SchemePro article-chain skipping by decoding safe page targets
 - Per-site saved settings and built-in profiles
 - Macro record/play/delete for difficult pages
 - Ad overlay cleanup
@@ -34,6 +37,8 @@ The current rules are strongest on the inspected families:
 - StartupLearners
 - PrivateJobBeta / Rempo style timer gates
 - SchemePro / LinkShortify style continue flows
+
+On SchemePro chains, Time Hooker reads the page-provided encoded next-step URL and moves through the article steps without clicking ads. Final LinkShortify pages may still require a real Turnstile/Captcha token before the destination can be released.
 
 No userscript can guarantee every shortlink site because many use different backend, ad, session, and anti-bot logic. Time Hooker focuses on safe, inspectable page actions and avoids clicking ad iframes.
 
@@ -93,6 +98,7 @@ ZIP package: `dist/local-link-resolver.zip`
 ## Safety Notes
 
 - Final VPlink/Telegram links are manual by design.
+- Final LinkShortify Turnstile/Captcha checks remain manual by design.
 - Auto mode is controlled by the `Auto Click Target` checkbox.
 - Ad iframe clicks are intentionally avoided.
 - Old versions of similar scripts should be disabled before testing.

@@ -23,3 +23,9 @@ The floating panel is designed for mobile browser users.
 ## Final Link Guard
 
 Final VPlink/Telegram links are not auto-opened. The proxy button remains manual so the user can confirm the final destination.
+
+Final LinkShortify pages with Cloudflare Turnstile are also manual. The proxy shows `SOLVE TURNSTILE` until the page has a real token, then it can point to `Get Link`.
+
+## SchemePro Skipper
+
+On `sb1.schemepro.org` and `sb2.schemepro.org`, Time Hooker can skip article steps by decoding the page's own next-step URL. This does not click ad iframes or disabled wait buttons.

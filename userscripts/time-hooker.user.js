@@ -1,12 +1,12 @@
 // ==UserScript==
 
-// @name            Time Hooker (V36.0 - Auto Mode Owns Flow)
+// @name            Time Hooker (V37.0 - SchemePro Chain Skipper)
 
 // @namespace       https://tampermonkey.net/
 
-// @version         36.0
+// @version         37.0
 
-// @description     Auto Click now fully owns flow progression; manual mode stops VPlink auto-navigation timers.
+// @description     Skips SchemePro article chains safely by decoding page targets; final LinkShortify stays token-aware/manual.
 
 // @author          rehan & Pankaj034
 
@@ -456,7 +456,7 @@
 
                 <div id="th-header" style="display:flex; justify-content:space-between; align-items:center; cursor:grab; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; margin-bottom:10px;">
 
-                    <span style="font-weight:900; color:#00ffcc; font-size:14px;">⚡ Time Hooker V36.0</span>
+                    <span style="font-weight:900; color:#00ffcc; font-size:14px;">⚡ Time Hooker V37.0</span>
 
                     <button id="th-toggle-btn" style="all:unset; cursor:pointer; background:rgba(255,255,255,0.15); border-radius:6px; padding:2px 10px;">${S.menuExpanded ? '−' : '+'}</button>
 
@@ -1380,6 +1380,142 @@
 
         }
 
+        function isSchemeProHost() {
+
+            return /^(sb1|sb2)\.schemepro\.org$/i.test(location.hostname);
+
+        }
+
+        function getCookieValue(name) {
+
+            const m = document.cookie.match(new RegExp('(?:^|;\\s*)' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=([^;]*)'));
+
+            return m ? decodeURIComponent(m[1]) : '';
+
+        }
+
+        function setCookieValue(name, value, maxAgeSeconds) {
+
+            document.cookie = name + '=' + encodeURIComponent(value) + '; path=/; max-age=' + String(maxAgeSeconds);
+
+        }
+
+        function deleteCookieValue(name) {
+
+            document.cookie = name + '=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0';
+
+        }
+
+        function parseSchemeProStep() {
+
+            if (!isSchemeProHost() || !document.documentElement) return null;
+
+            const html = document.documentElement.innerHTML || '';
+
+            const bodyText = (document.body && document.body.innerText || '').replace(/\s+/g, ' ');
+
+            const stepMatch = bodyText.match(/Step\s*([1-4])\s*\/\s*4/i) || html.match(/Step\s*([1-4])\s*\/\s*4/i);
+
+            const targetMatch = html.match(/tagrget_url\s*=\s*["']([^"']+)["']/i) || html.match(/target_url\s*=\s*["']([^"']+)["']/i);
+
+            if (!stepMatch || !targetMatch) return null;
+
+            let decoded = '';
+
+            try { decoded = atob(targetMatch[1]).trim(); } catch(e) { decoded = ''; }
+
+            if (!/^https?:\/\//i.test(decoded)) return null;
+
+            const step = parseInt(stepMatch[1], 10);
+
+            const alias = getCookieValue('alias') || getCookieValue('ref' + (location.pathname.split('/').filter(Boolean)[0] || '')) || '';
+
+            return { step, target: decoded, alias };
+
+        }
+
+        function getSchemeProSkipKey(info) {
+
+            return 'th_schemepro_skip_' + location.hostname + '_' + location.pathname + '_' + (info ? info.step + '_' + info.target : '');
+
+        }
+
+        function rememberSchemeProStep(info) {
+
+            try {
+
+                const key = 'th_schemepro_trace_' + (info.alias || 'latest');
+
+                const trace = JSON.parse(sessionStorage.getItem(key) || '[]');
+
+                trace.push({ host: location.hostname, step: info.step, from: location.href, to: info.target, at: Date.now() });
+
+                sessionStorage.setItem(key, JSON.stringify(trace.slice(-8)));
+
+            } catch(e) {}
+
+        }
+
+        function maybeSkipSchemeProArticle(proxy) {
+
+            if (!S.enabled || !isSchemeProHost()) return false;
+
+            const info = parseSchemeProStep();
+
+            if (!info) return false;
+
+            const skipKey = getSchemeProSkipKey(info);
+
+            if (sessionStorage.getItem(skipKey) === '1' || window.th_schemepro_skip_pending) return true;
+
+            const current = location.href.replace(/\/$/, '');
+
+            const target = info.target.replace(/\/$/, '');
+
+            if (current === target) return false;
+
+            sessionStorage.setItem(skipKey, '1');
+
+            window.th_schemepro_skip_pending = true;
+
+            rememberSchemeProStep(info);
+
+            if (info.step === 1 || info.step === 3) setCookieValue('user_step', '1', 180);
+
+            else deleteCookieValue('user_step');
+
+            window.th_gate_status = 'SchemePro: skipping step ' + info.step + '/4';
+
+            if (!proxy && S.pinMode && document.body) {
+
+                proxy = document.createElement("button"); proxy.id = "th-proxy-btn";
+
+                proxy.style.cssText = "position: fixed !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 2147483647; padding: 15px 30px; font-weight: bold; background: linear-gradient(90deg, #5b42f3, #00ddeb); color: white; border-radius: 10px; cursor: pointer;";
+
+                document.body.appendChild(proxy);
+
+            }
+
+            if (S.pinMode && proxy) {
+
+                proxy.innerText = 'SKIP STEP ' + info.step + '/4';
+
+                proxy.style.top = S.topOffset + 'px';
+
+                proxy.style.display = 'block';
+
+            }
+
+            (window.th_nativeSetTimeout || setTimeout)(() => {
+
+                if (S.enabled) location.href = info.target;
+
+            }, 350);
+
+            return true;
+
+        }
+
         function isSmartVerifyTarget(el, text) {
 
             return !!(S.smartVerifyFlow && text.includes('click to verify') && text.length <= 90 && isVisibleAction(el) && !isDisabledAction(el));
@@ -1622,9 +1758,17 @@
 
             if (!bodyText.includes('your link is almost ready')) return null;
 
+            const hasTurnstile = !!document.querySelector('.cf-turnstile, iframe[src*="challenges.cloudflare.com"], [data-sitekey]');
+
+            const tokenEl = document.querySelector('input[name="cf-turnstile-response"], textarea[name="cf-turnstile-response"]');
+
+            const turnstileToken = tokenEl && (tokenEl.value || '').trim();
+
+            const needsTurnstile = !!(hasTurnstile && !turnstileToken);
+
             const waiting = Array.from(document.querySelectorAll('a, button')).find(el => getActionText(el).toLowerCase().includes('please wait'));
 
-            const ready = Array.from(document.querySelectorAll('a, button')).find(el => {
+            const ready = needsTurnstile ? null : Array.from(document.querySelectorAll('a, button')).find(el => {
 
                 const text = getActionText(el).toLowerCase();
 
@@ -1640,7 +1784,7 @@
 
             });
 
-            return { waiting, ready };
+            return { waiting, ready, needsTurnstile };
 
         }
 
@@ -1798,6 +1942,8 @@
 
             }
 
+            if (maybeSkipSchemeProArticle(proxy)) return;
+
             window.th_skipTimersEnabled = !!S.skipTimers;
 
             const safeCountdownState = getSafeCountdownState();
@@ -1859,6 +2005,28 @@
                         proxy.onclick = () => { proxy.innerText = "⏳ WAITING..."; clickFlowTarget(linkShortifyState.ready); };
 
                     }
+
+                    return;
+
+                }
+
+                if (linkShortifyState.needsTurnstile) {
+
+                    if (linkShortifyState.waiting && S.pinMode && proxy) nudgeLinkShortifyTimer(proxy);
+
+                    if (S.pinMode && proxy) {
+
+                        proxy.innerText = 'SOLVE TURNSTILE';
+
+                        proxy.style.top = S.topOffset + 'px';
+
+                        proxy.style.display = 'block';
+
+                        proxy.onclick = null;
+
+                    }
+
+                    window.th_gate_status = 'Final page: Turnstile required';
 
                     return;
 
