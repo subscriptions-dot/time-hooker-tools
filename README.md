@@ -6,6 +6,7 @@ This repository includes:
 
 - **Time Hooker - Universal Shortlink Timer Bypass**: a userscript for supported shortlink, countdown, verify, continue, and get-link pages.
 - **HROne Punch Timer**: a lightweight Chrome extension that shows worked time and remaining time on HROne.
+- **Local Link Resolver**: a no-login local redirect helper for exact source-to-final URL rules.
 
 Owner: **Pankaj**
 
@@ -50,6 +51,18 @@ It shows:
 
 It stores only today's first punch time in local Chrome storage and does not send attendance data anywhere.
 
+## Local Link Resolver
+
+Local Link Resolver is a small Chrome extension inspired by the local redirect-rule idea from `bypass-links`, but without Firebase login or private server sync.
+
+It can:
+
+- save exact source URL to final URL rules locally
+- redirect saved source URLs automatically
+- check simple HTTP redirects
+
+It cannot solve JavaScript timer gates by itself. Use Time Hooker for timer pages and Local Link Resolver for repeated exact links where you already know the final URL.
+
 ## Install
 
 ### Time Hooker userscript
@@ -66,6 +79,16 @@ It stores only today's first punch time in local Chrome storage and does not sen
 3. Enable Developer mode.
 4. Click `Load unpacked`.
 5. Select `extensions/hrone-punch-timer`.
+
+### Local Link Resolver extension
+
+1. Open Chrome.
+2. Go to `chrome://extensions`.
+3. Enable Developer mode.
+4. Click `Load unpacked`.
+5. Select `extensions/local-link-resolver`.
+
+ZIP package: `dist/local-link-resolver.zip`
 
 ## Safety Notes
 

@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Local Link Resolver",
+  "version": "1.0.0",
+  "description": "No-login local redirect helper with simple final URL checks.",
+  "permissions": ["storage", "tabs", "webNavigation"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_title": "Local Link Resolver",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

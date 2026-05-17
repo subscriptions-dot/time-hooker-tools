@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Local Link Resolver</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="header">
+        <div>
+          <h1>Local Link Resolver</h1>
+          <p>No login. Local rules only.</p>
+        </div>
+        <label class="switch">
+          <input id="enabled" type="checkbox">
+          <span>On</span>
+        </label>
+      </header>
+
+      <section class="section">
+        <label for="sourceUrl">Source URL</label>
+        <textarea id="sourceUrl" rows="3" spellcheck="false"></textarea>
+        <button id="useCurrent" type="button">Use current tab</button>
+      </section>
+
+      <section class="section">
+        <label for="targetUrl">Final URL</label>
+        <textarea id="targetUrl" rows="3" placeholder="https://example.com/final" spellcheck="false"></textarea>
+        <div class="grid">
+          <button id="saveRule" type="button" class="primary">Save rule</button>
+          <button id="deleteRule" type="button">Delete</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="grid">
+          <button id="resolveSimple" type="button">Check redirect</button>
+          <button id="openTarget" type="button">Open final</button>
+        </div>
+        <p id="status" class="status">Ready</p>
+      </section>
+
+      <section class="section">
+        <label for="rulesList">Saved rules</label>
+        <select id="rulesList"></select>
+      </section>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>
