@@ -1,5 +1,14 @@
 # Changelog
 
+## 52.0 - Confirmed Learning + Safe Recipe Replay
+
+- **Confirmed learning**: intermediate actions are staged first and saved only after the page URL or verified page shape actually advances. Captcha pages, final destinations, Telegram links, ads, overlays, and Time Hooker's own UI are never learned.
+- **Confidence-gated replay**: a same-site recipe must succeed three times with a healthy success ratio before it can auto-run. Cross-site pattern matches remain advisory and require a manual tap.
+- **Existing safety guards stay authoritative**: learned actions use the same captcha pause, final-link guard, same-host navigation checks, visit-loop protection, and single-navigation lock as normal flows.
+- **Self-healing storage**: malformed records are sanitised, repeated failures decay confidence and remove bad recipes, stale entries expire, storage is capped, and writes are throttled.
+- **Final-link hardening**: Telegram links now remain manual on every host, not only on VPlink pages.
+- **GitHub auto-update**: userscript update and download metadata now point at the repository's raw `main` userscript.
+
 ## 51.0 - Fast Auto-Walk + Crash-Safe Navigation
 
 - **Faster multi-hop walk**: auto-navigation between safe flow hops now fires in ~150 ms (was 300 ms), so 2-3 redirect hops chain through near-instantly instead of dragging.

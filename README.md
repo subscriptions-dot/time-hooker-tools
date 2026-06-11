@@ -20,18 +20,17 @@ Time Hooker is a mobile-friendly userscript for Violentmonkey/Tampermonkey. It h
 
 - Fast-forward supported countdown timers
 - Floating `CLICK` proxy button for real targets
-- `Auto Click Target` toggle with safety locks
-- `Auto Flow Skip` for safe intermediate redirect/timer/continue pages
+- `Auto Flow Skip` for safe intermediate redirect/timer/continue actions
 - Optional `Universal Pattern Mode` for unknown sites that use the same shortlink page patterns
 - Remote rules sync: a single hosted JSON (`rules/time-hooker-rules.json`) adds/updates supported sites for every device with no re-publish; always falls back to cached/built-in rules and never blocks the page
-- Self-learning sites: new domains that work under Universal Pattern Mode are auto-remembered and auto-activate on the next visit
+- Confirmed action learning: intermediate steps are remembered only after the page actually advances
+- Confidence-gated recipe replay with automatic failure decay, stale-entry pruning, and storage limits
 - One-tap `➕ Add Site` / `🗑 Forget` controls to manage the learned-site list per domain
 - Self-healing floating panel that re-appears if a page tries to remove it
 - Always-visible live status bar showing the current flow/gate state
-- Final-link guard for VPlink/Telegram pages
+- Final-link guard keeps Telegram and external destinations manual on every host
 - Direct SchemePro article-chain skipping by decoding safe page targets
 - Per-site saved settings and built-in profiles
-- Macro record/play/delete for difficult pages
 - Ad overlay cleanup
 - Mobile-friendly floating panel
 
@@ -84,7 +83,7 @@ It cannot solve JavaScript timer gates by itself. Use Time Hooker for timer page
 ### Time Hooker userscript
 
 1. Install Violentmonkey or Tampermonkey.
-2. Open `userscripts/time-hooker.user.js`.
+2. Open the [latest raw userscript](https://raw.githubusercontent.com/subscriptions-dot/time-hooker-tools/main/userscripts/time-hooker.user.js).
 3. Install or update the script.
 4. Keep only the latest Time Hooker enabled to avoid duplicate clicks.
 
