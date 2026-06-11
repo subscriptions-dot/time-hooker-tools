@@ -23,6 +23,10 @@ Time Hooker is a mobile-friendly userscript for Violentmonkey/Tampermonkey. It h
 - `Auto Click Target` toggle with safety locks
 - `Auto Flow Skip` for safe intermediate redirect/timer/continue pages
 - Optional `Universal Pattern Mode` for unknown sites that use the same shortlink page patterns
+- Self-learning sites: new domains that work under Universal Pattern Mode are auto-remembered and auto-activate on the next visit
+- One-tap `➕ Add Site` / `🗑 Forget` controls to manage the learned-site list per domain
+- Self-healing floating panel that re-appears if a page tries to remove it
+- Always-visible live status bar showing the current flow/gate state
 - Final-link guard for VPlink/Telegram pages
 - Direct SchemePro article-chain skipping by decoding safe page targets
 - Per-site saved settings and built-in profiles

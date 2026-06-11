@@ -1,12 +1,12 @@
 // ==UserScript==
 
-// @name            Time Hooker (V40.0 - V38 Flow + Universal Pattern Mode)
+// @name            Time Hooker (V45.0 - Captcha-Safe Pause + Per-Site Learning)
 
 // @namespace       https://tampermonkey.net/
 
-// @version         40.0
+// @version         45.0
 
-// @description     Restores V38 fast flow behavior and adds optional proxy-first universal pattern detection for similar shortlink pages.
+// @description     Fast-forwards timers and auto-skips supported shortlink/countdown/verify pages. V45 fully pauses on captcha/Cloudflare/Turnstile (no timer, no skip — shows "SOLVE CAPTCHA") and learns per-site whether force was needed. Builds on V44 stuck-timer fixes, V43 cross-device auto-update, and V42 self-learning sites.
 
 // @author          rehan & Pankaj034
 
@@ -21,6 +21,16 @@
 // @grant           GM_getValue
 
 // @license         GPL-3.0-or-later
+
+// @homepageURL     https://greasyfork.org/en/scripts/569833
+
+// @supportURL      https://greasyfork.org/en/scripts/569833/feedback
+
+// @updateURL       https://update.greasyfork.org/scripts/569833/Time%20Hooker.meta.js
+
+// @downloadURL     https://update.greasyfork.org/scripts/569833/Time%20Hooker.user.js
+
+// @icon            https://www.google.com/s2/favicons?sz=64&domain=greasyfork.org
 
 // ==/UserScript==
 
@@ -76,6 +86,12 @@
 
         };
 
+        // Applied to sites the script has learned on its own (or that the user added via "Add This Site").
+
+        // Universal pattern detection stays on so unknown-but-similar pages keep working safely.
+
+        const LEARNED_PROFILE = { enabled: true, skipTimers: true, speed: 15, aggroBypass: true, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: false, autoClick: false, autoFlowSkip: true, universalFlow: true, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 };
+
         function normalizeStore(saved) {
 
             let parsed = {};
@@ -96,13 +112,17 @@
 
                     disabledBuiltins: (parsed.disabledBuiltins && typeof parsed.disabledBuiltins === 'object') ? parsed.disabledBuiltins : {},
 
-                    macros: (parsed.macros && typeof parsed.macros === 'object') ? parsed.macros : {}
+                    macros: (parsed.macros && typeof parsed.macros === 'object') ? parsed.macros : {},
+
+                    learnedSites: (parsed.learnedSites && typeof parsed.learnedSites === 'object') ? parsed.learnedSites : {},
+
+                    siteTricks: (parsed.siteTricks && typeof parsed.siteTricks === 'object') ? parsed.siteTricks : {}
 
                 };
 
             }
 
-            return { global: Object.assign({}, DEFAULTS, parsed || {}), profiles: {}, disabledBuiltins: {}, macros: {} };
+            return { global: Object.assign({}, DEFAULTS, parsed || {}), profiles: {}, disabledBuiltins: {}, macros: {}, learnedSites: {}, siteTricks: {} };
 
         }
 
@@ -118,11 +138,19 @@
 
         let store = normalizeStore(savedStr);
 
+        function isLearnedSite() { return !!(store.learnedSites && store.learnedSites[SITE_KEY]); }
+
         let activeProfile = !!(store.profiles && store.profiles[SITE_KEY]);
 
-        let suggestedProfile = !activeProfile && !!BUILTIN_SITE_PROFILES[SITE_KEY] && !(store.disabledBuiltins && store.disabledBuiltins[SITE_KEY]);
+        let builtinSuggest = !activeProfile && !!BUILTIN_SITE_PROFILES[SITE_KEY] && !(store.disabledBuiltins && store.disabledBuiltins[SITE_KEY]);
 
-        let S = Object.assign({}, DEFAULTS, store.global, suggestedProfile ? BUILTIN_SITE_PROFILES[SITE_KEY] : {}, activeProfile ? store.profiles[SITE_KEY] : {});
+        let learnedSuggest = !activeProfile && !builtinSuggest && isLearnedSite() && !(store.disabledBuiltins && store.disabledBuiltins[SITE_KEY]);
+
+        let suggestedProfile = builtinSuggest || learnedSuggest;
+
+        const suggestedData = builtinSuggest ? BUILTIN_SITE_PROFILES[SITE_KEY] : (learnedSuggest ? LEARNED_PROFILE : {});
+
+        let S = Object.assign({}, DEFAULTS, store.global, suggestedProfile ? suggestedData : {}, activeProfile ? store.profiles[SITE_KEY] : {});
 
         if (activeProfile && store.profiles[SITE_KEY] && !Object.prototype.hasOwnProperty.call(store.profiles[SITE_KEY], 'autoFlowSkip') && BUILTIN_SITE_PROFILES[SITE_KEY]) {
 
@@ -224,6 +252,130 @@
 
         }
 
+        function isLearnableSite() {
+
+            return !!SITE_KEY && SITE_KEY !== 'unknown-site' && SITE_KEY !== 'local-file' && !BUILTIN_SITE_PROFILES[SITE_KEY];
+
+        }
+
+        function learnedSiteCount() {
+
+            return store.learnedSites ? Object.keys(store.learnedSites).length : 0;
+
+        }
+
+        function learnCurrentSite(reason) {
+
+            if (!isLearnableSite()) return false;
+
+            store.learnedSites = store.learnedSites || {};
+
+            const existing = store.learnedSites[SITE_KEY];
+
+            store.learnedSites[SITE_KEY] = {
+
+                reason: reason || (existing && existing.reason) || 'auto',
+
+                hits: ((existing && existing.hits) || 0) + 1,
+
+                ts: Math.floor(Date.now())
+
+            };
+
+            if (store.disabledBuiltins && store.disabledBuiltins[SITE_KEY]) delete store.disabledBuiltins[SITE_KEY];
+
+            saveStore();
+
+            return true;
+
+        }
+
+        function forgetCurrentSite() {
+
+            let changed = false;
+
+            if (store.learnedSites && store.learnedSites[SITE_KEY]) { delete store.learnedSites[SITE_KEY]; changed = true; }
+
+            if (store.profiles && store.profiles[SITE_KEY]) { delete store.profiles[SITE_KEY]; changed = true; activeProfile = false; }
+
+            store.disabledBuiltins = store.disabledBuiltins || {};
+
+            store.disabledBuiltins[SITE_KEY] = true;
+
+            suggestedProfile = false;
+
+            S = Object.assign(S, DEFAULTS, store.global);
+
+            refreshLiveFlags(S);
+
+            saveStore();
+
+            return changed;
+
+        }
+
+        // Manual "Add This Site": save a strong per-site profile AND remember it for the learned list.
+
+        function addSiteProfileManually() {
+
+            if (!isLearnableSite() && !BUILTIN_SITE_PROFILES[SITE_KEY]) return false;
+
+            S = Object.assign(S, LEARNED_PROFILE);
+
+            learnCurrentSite('manual');
+
+            saveSiteProfile();
+
+            refreshLiveFlags(S);
+
+            return true;
+
+        }
+
+        // Auto-learn during runtime: called when universal/flow logic confidently advances an unknown page.
+
+        let th_autoLearnArmed = !activeProfile && !builtinSuggest;
+
+        function autoLearnIfNew(reason) {
+
+            if (!th_autoLearnArmed || !isLearnableSite()) return;
+
+            if (store.learnedSites && store.learnedSites[SITE_KEY]) { th_autoLearnArmed = false; return; }
+
+            if (learnCurrentSite(reason || 'auto')) th_autoLearnArmed = false;
+
+        }
+
+        // Per-site trick learning: remember whether this site needed FORCE (stuck) or flowed normally as a TIMER,
+
+        // so next visit can act faster (lower the stuck threshold on known force-sites).
+
+        function getSiteTrick() {
+
+            return (store.siteTricks && store.siteTricks[SITE_KEY]) || '';
+
+        }
+
+        function recordSiteTrick(trick) {
+
+            if (!SITE_KEY || SITE_KEY === 'unknown-site' || SITE_KEY === 'local-file') return;
+
+            store.siteTricks = store.siteTricks || {};
+
+            if (store.siteTricks[SITE_KEY] === trick) return;
+
+            store.siteTricks[SITE_KEY] = trick;
+
+            saveStore();
+
+        }
+
+        function getStuckThreshold() {
+
+            return getSiteTrick() === 'force' ? 3 : 8;
+
+        }
+
         window.isProActive = false;
 
         window.proEngineInitialized = false;
@@ -318,6 +470,8 @@
 
             const getSpeedToUse = (kind) => {
 
+                if (window.th_captcha_present) return 1;
+
                 if (!(window.th_masterEnabled && window.th_skipTimersEnabled && !window.isProActive && !isCloudflare())) return 1;
 
                 if (window.th_flowManualMode && isSafeCountdownPage()) return 1;
@@ -353,6 +507,36 @@
                 timeAppDate += (delta * speedToUse); return Math.floor(timeAppDate);
 
             };
+
+            // Hook performance.now() with the SAME speed factor as Date.now, so requestAnimationFrame / perf-based
+
+            // countdowns also fast-forward, and Date.now vs performance.now stay consistent (avoids tamper detection).
+
+            try {
+
+                const perf = window.performance;
+
+                const origPerfNow = (perf && typeof perf.now === 'function') ? perf.now.bind(perf) : null;
+
+                if (origPerfNow) {
+
+                    let timeAppPerf = origPerfNow(); let lastTickPerf = origPerfNow();
+
+                    perf.now = function() {
+
+                        let now = origPerfNow(); let delta = now - lastTickPerf; lastTickPerf = now;
+
+                        let speedToUse = getSpeedToUse('date');
+
+                        timeAppPerf += (delta * speedToUse); return timeAppPerf;
+
+                    };
+
+                    makeNative(perf.now, 'now');
+
+                }
+
+            } catch(e) {}
 
             makeNative(window.setTimeout, 'setTimeout'); makeNative(window.setInterval, 'setInterval'); makeNative(Date.now, 'now');
 
@@ -462,7 +646,7 @@
 
                 <div id="th-header" style="display:flex; justify-content:space-between; align-items:center; cursor:grab; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; margin-bottom:10px;">
 
-                    <span style="font-weight:900; color:#00ffcc; font-size:14px;">⚡ Time Hooker V40.0</span>
+                    <span style="font-weight:900; background:linear-gradient(90deg,#00ffcc,#00a8ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; font-size:14px;">⚡ Time Hooker V45.0</span>
 
                     <button id="th-toggle-btn" style="all:unset; cursor:pointer; background:rgba(255,255,255,0.15); border-radius:6px; padding:2px 10px;">${S.menuExpanded ? '−' : '+'}</button>
 
@@ -472,9 +656,21 @@
 
                     <button id="th-master-btn" style="all:unset; cursor:pointer; text-align:center; border-radius:8px; padding:10px; font-weight:900; letter-spacing:0; background:${S.enabled ? 'linear-gradient(90deg,#00c781,#00a8ff)' : 'linear-gradient(90deg,#444,#222)'}; color:white; border:1px solid rgba(255,255,255,0.18);">${S.enabled ? 'SCRIPT ON' : 'SCRIPT OFF'}</button>
 
-                    <div id="th-profile-status" style="display:none;">Profile: ${activeProfile ? 'this site' : (suggestedProfile ? 'suggested' : 'global')} (${SITE_KEY})</div>
+                    <div id="th-gate-status" style="font-size:11px; color:#9ee9ff; background:rgba(0,255,204,0.08); border:1px solid rgba(0,255,204,0.22); border-radius:6px; padding:6px 8px; text-align:center; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${window.th_gate_status || 'Idle'}</div>
 
-                    <div id="th-gate-status" style="display:none;">${window.th_gate_status || 'Macro: idle'}</div>
+                    <div id="th-profile-status" style="font-size:10px; color:#8a93a6; text-align:center;">Profile: ${activeProfile ? 'this site' : (suggestedProfile ? (builtinSuggest ? 'built-in' : 'learned') : 'global')} · ${SITE_KEY}</div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+
+                        <button id="th-add-site" style="all:unset; cursor:pointer; text-align:center; background:linear-gradient(90deg,#00c781,#00a8ff); color:#fff; border-radius:6px; padding:7px 4px; font-weight:900; font-size:11px;">➕ Add Site</button>
+
+                        <button id="th-forget-site" style="all:unset; cursor:pointer; text-align:center; background:#3a2230; color:#ff9bb3; border:1px solid #5a2a3c; border-radius:6px; padding:7px 4px; font-weight:900; font-size:11px;">🗑 Forget</button>
+
+                    </div>
+
+                    <div id="th-learned-count" style="font-size:10px; color:#8a93a6; text-align:center;">Learned sites: ${learnedSiteCount()}</div>
+
+                    <button id="th-force-skip" style="all:unset; cursor:pointer; text-align:center; border-radius:8px; padding:9px; font-weight:900; letter-spacing:0.5px; background:linear-gradient(90deg,#ff7a18,#ffd200); color:#1a1a1a; border:1px solid rgba(255,255,255,0.18);">⚡ FORCE SKIP NOW</button>
 
                     <label style="display:flex; gap:8px; cursor:pointer;"><input type="checkbox" id="t-skip" ${S.skipTimers?'checked':''}><span style="color:#00ffcc; font-weight:bold;">[✓] Fast-Forward Timers</span></label>
 
@@ -552,7 +748,11 @@
 
                 const status = $("th-profile-status");
 
-                if (status) status.textContent = `Profile: ${activeProfile ? 'this site' : (suggestedProfile ? 'suggested' : 'global')} (${SITE_KEY})`;
+                if (status) status.textContent = `Profile: ${activeProfile ? 'this site' : (suggestedProfile ? (builtinSuggest ? 'built-in' : 'learned') : 'global')} · ${SITE_KEY}`;
+
+                const lc = $("th-learned-count");
+
+                if (lc) lc.textContent = "Learned sites: " + learnedSiteCount();
 
                 const useGlobal = $("th-use-global");
 
@@ -607,6 +807,104 @@
                 paintMaster();
 
                 paintProfile();
+
+            };
+
+            const addSiteBtn = $("th-add-site");
+
+            if (addSiteBtn) addSiteBtn.onclick = () => {
+
+                if (addSiteProfileManually()) {
+
+                    refreshControls();
+
+                    paintMaster();
+
+                    paintProfile();
+
+                    window.th_gate_status = "Saved this site ✓";
+
+                } else {
+
+                    window.th_gate_status = "Cannot add this page";
+
+                }
+
+            };
+
+            const forgetBtn = $("th-forget-site");
+
+            if (forgetBtn) forgetBtn.onclick = () => {
+
+                forgetCurrentSite();
+
+                refreshControls();
+
+                paintMaster();
+
+                paintProfile();
+
+                window.th_gate_status = "Forgot this site";
+
+            };
+
+            const forceBtn = $("th-force-skip");
+
+            if (forceBtn) forceBtn.onclick = () => {
+
+                try {
+
+                    if (!S.enabled) { S.enabled = true; setS(S); paintMaster(); }
+
+                    window.th_gate_status = "Force skip…";
+
+                    // 1) zero out any standalone visible countdown number (0-180)
+
+                    Array.from(document.querySelectorAll('span,div,b,strong,p,h1,h2,h3,td,#tp-time,#ce-time,#link1s-time,#timer,#countdown')).slice(0, 500).forEach(el => {
+
+                        if (isOwnUi(el) || el.children.length !== 0) return;
+
+                        const t = (el.textContent || '').trim();
+
+                        if (/^\d{1,3}$/.test(t) && parseInt(t, 10) <= 180) { try { el.textContent = '0'; } catch(e){} }
+
+                    });
+
+                    // 2) finish a recognised gate (reveals/zeros its own elements)
+
+                    const st = getSafeCountdownState();
+
+                    if (st && st.detected) finishSafeCountdown(st);
+
+                    // 3) reveal + click the best continue/get-link target; keep final/Telegram links manual
+
+                    const target = getFlowReadyTarget() || findBestActionTarget();
+
+                    if (target) {
+
+                        revealFlowElement(target);
+
+                        if (isFinalVplinkTarget(target) || isTelegramHref(target.href || '')) {
+
+                            if (S.highlight) target.style.setProperty('outline', '4px solid #00ffcc', 'important');
+
+                            window.th_gate_status = "Final link ready — tap it";
+
+                        } else {
+
+                            simulateClick(target);
+
+                            window.th_gate_status = "Force: clicked " + (getTargetLabel(target) || '').slice(0, 22);
+
+                        }
+
+                    } else {
+
+                        window.th_gate_status = "Force: no target found";
+
+                    }
+
+                } catch(e) { window.th_gate_status = "Force skip error"; }
 
             };
 
@@ -753,6 +1051,26 @@
         if (!isIframe) {
 
             if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", createFloatingMenu); else createFloatingMenu();
+
+            // Self-healing panel: some shortlink pages wipe the DOM or rebuild <body>. Re-inject the menu if it vanishes.
+
+            setInterval(() => {
+
+                try {
+
+                    if (!document.body) return;
+
+                    const root = document.getElementById("th-panel-root");
+
+                    if (!root || !document.documentElement.contains(root)) { createFloatingMenu(); return; }
+
+                    // Keep it clickable on top of aggressive ad overlays.
+
+                    if (root.style.zIndex !== "2147483647") root.style.zIndex = "2147483647";
+
+                } catch(e) {}
+
+            }, 2000);
 
         }
 
@@ -2048,6 +2366,10 @@
 
             if (!hasFlowShape) return false;
 
+            // This unknown page matches the shortlink/countdown shape while Universal mode is on — remember it.
+
+            autoLearnIfNew('universal');
+
             const redirectTarget = getScriptRedirectTarget();
 
             if (redirectTarget && isSafeUniversalFlowUrl(redirectTarget)) {
@@ -2424,6 +2746,46 @@
 
         }
 
+        // Detect a captcha / Cloudflare / human-verification challenge that needs a real human.
+
+        // When present, Time Hooker fully pauses: no timer speed-up, no skip, no auto-click.
+
+        function detectChallenge() {
+
+            try {
+
+                const bodyText = (document.body && document.body.innerText || '');
+
+                if (bodyText.length < 2500) {
+
+                    const t = bodyText.toLowerCase();
+
+                    if (/just a moment|checking your browser|verify you are human|verifying you are human|needs to review the security of your connection|enable javascript and cookies to continue|attention required/i.test(t)) return true;
+
+                }
+
+                const widgets = document.querySelectorAll('.cf-turnstile, iframe[src*="challenges.cloudflare.com"], .g-recaptcha, iframe[src*="recaptcha/api2"], iframe[src*="google.com/recaptcha"], iframe[src*="hcaptcha.com"], .h-captcha, #cf-challenge-running, #challenge-form');
+
+                for (let i = 0; i < widgets.length; i++) {
+
+                    const w = widgets[i];
+
+                    if (isOwnUi(w)) continue;
+
+                    const r = w.getBoundingClientRect();
+
+                    const st = getComputedStyle(w);
+
+                    if (r.width > 40 && r.height > 40 && st.display !== 'none' && st.visibility !== 'hidden' && parseFloat(st.opacity || '1') > 0.1) return true;
+
+                }
+
+                return false;
+
+            } catch(e) { return false; }
+
+        }
+
         function getDnsBlockMessage() {
 
             const host = location.hostname.toLowerCase();
@@ -2550,6 +2912,46 @@
 
             }
 
+            // 🔒 CAPTCHA / CLOUDFLARE GUARD: if a human-verification challenge is on the page, fully pause —
+
+            // no timer speed-up (flag read by the timer engine), no skip, no auto-click. Just show "SOLVE CAPTCHA".
+
+            if (detectChallenge()) {
+
+                window.th_captcha_present = true;
+
+                window.th_gate_status = 'Captcha/Cloudflare — paused, solve it';
+
+                recordSiteTrick('manual');
+
+                if (S.pinMode) {
+
+                    if (!proxy) {
+
+                        proxy = document.createElement("button"); proxy.id = "th-proxy-btn";
+
+                        proxy.style.cssText = "position: fixed !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 2147483647; padding: 15px 30px; font-weight: bold; background: linear-gradient(90deg, #d7263d, #f46036); color: white; border-radius: 10px; cursor: default;";
+
+                        document.body.appendChild(proxy);
+
+                    }
+
+                    proxy.innerText = '🔒 SOLVE CAPTCHA';
+
+                    proxy.style.top = S.topOffset + 'px';
+
+                    proxy.style.display = 'block';
+
+                    proxy.onclick = null;
+
+                }
+
+                return;
+
+            }
+
+            window.th_captcha_present = false;
+
             if (maybeSkipSchemeProArticle(proxy)) return;
 
             if (maybeRunVplinkChain(proxy)) return;
@@ -2652,6 +3054,34 @@
 
             if (safeCountdownState.detected) {
 
+                // Stuck-timer auto-recovery: if the visible countdown value has not changed for several loop ticks
+
+                // (e.g. an ad callback never fired, or it is a server/perf timer we cannot speed), force the gate to finish.
+
+                if (safeCountdownState.timerValue !== null && safeCountdownState.timerValue > 0) {
+
+                    if (window.th_stuck_val === safeCountdownState.timerValue) window.th_stuck_count = (window.th_stuck_count || 0) + 1;
+
+                    else { window.th_stuck_val = safeCountdownState.timerValue; window.th_stuck_count = 0; }
+
+                    if ((window.th_stuck_count || 0) >= getStuckThreshold()) {
+
+                        finishSafeCountdown(safeCountdownState);
+
+                        recordSiteTrick('force');
+
+                        window.th_gate_status = 'Timer stuck → forced finish';
+
+                        window.th_stuck_count = 0;
+
+                    }
+
+                } else {
+
+                    window.th_stuck_count = 0;
+
+                }
+
                 if (!proxy && S.pinMode) {
 
                     proxy = document.createElement("button"); proxy.id = "th-proxy-btn";
@@ -2663,6 +3093,8 @@
                 }
 
                 if (safeCountdownState.ready) {
+
+                    recordSiteTrick('timer');
 
                     if (S.highlight) safeCountdownState.ready.style.setProperty('outline', '4px solid #00ffcc', 'important');
 
