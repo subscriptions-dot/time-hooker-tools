@@ -1,5 +1,15 @@
 # Changelog
 
+## 55.0 - Per-Link Memory + Loop Recovery
+
+- **Fixed the reported `vplink.in/zecn` loop**: four-character aliases are now valid and `zecn` gets its own flow-memory key.
+- **Correct alias extraction**: known parameters such as `studiissinsucrnce` are checked explicitly; shared values such as `uiso=11186` can no longer merge unrelated links into one history.
+- **Cross-page continuity**: Vacancymode stores the active alias from its landing query and reuses it on article pages in the same origin/session.
+- **Recent-loop detection only**: route attempts older than 45 seconds no longer trigger a false loop, and stored trace entries expire after five minutes.
+- **Server-error brain state**: 429/500/502/503/504 and Cloudflare host failures stop navigation and learning immediately with a clear retry status.
+- **Learning isolation**: a pending recipe is cancelled if navigation changes to another website, preventing misleading learning messages across domains.
+- **Live finding**: during testing, VPlink itself returned the expected redirect but the specific Vacancymode `zecn` backend endpoint returned HTTP 502 while the Vacancymode homepage remained healthy.
+
 ## 54.0 - Page Brain + Fast Verified Learning
 
 - **Page Brain**: classifies the current page as redirect, structured step, timer, ready action, manual gate, captcha, final link, loop, or unknown before automation acts.

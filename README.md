@@ -26,6 +26,8 @@ Time Hooker is a mobile-friendly userscript for Violentmonkey/Tampermonkey. It h
 - Confirmed action learning: intermediate steps are remembered only after the page actually advances
 - Page Brain classification with clear redirect/timer/gate/captcha/final/loop status
 - Stable verified steps become automatic after two successful confirmations
+- Separate per-link flow memory, including short aliases such as `zecn`
+- Temporary server-error detection that pauses instead of looping
 - Confidence-gated recipe replay with automatic failure decay, stale-entry pruning, and storage limits
 - One-tap `➕ Add Site` / `🗑 Forget` controls to manage the learned-site list per domain
 - Self-healing floating panel that re-appears if a page tries to remove it
