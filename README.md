@@ -29,6 +29,7 @@ Time Hooker is a mobile-friendly userscript for Violentmonkey/Tampermonkey. It h
 - Self-healing floating panel that re-appears if a page tries to remove it
 - Always-visible live status bar showing the current flow/gate state
 - Final-link guard keeps Telegram and external destinations manual on every host
+- Vacancymode gate awareness: pauses for its required manual confirmation and resumes the VPlink chain automatically afterward
 - Direct SchemePro article-chain skipping by decoding safe page targets
 - Per-site saved settings and built-in profiles
 - Ad overlay cleanup
@@ -108,6 +109,7 @@ ZIP package: `dist/local-link-resolver.zip`
 ## Safety Notes
 
 - Final VPlink/Telegram links are manual by design.
+- Vacancymode's ad-confirmation step is manual; Time Hooker waits and resumes automatically after confirmation.
 - Final LinkShortify Turnstile/Captcha checks remain manual by design.
 - Auto mode is controlled by the `Auto Click Target` checkbox.
 - Intermediate shortlink flow movement is controlled by `Auto Flow Skip`.

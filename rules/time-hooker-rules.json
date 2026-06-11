@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-06-11",
+  "updated": "2026-06-12",
   "note": "Time Hooker community site rules. Add a hostname under \"sites\" with any of these flags: enabled, skipTimers, speed (1-50), aggroBypass, safeCountdownMode, videoSpeed, autoClick, autoFlowSkip, universalFlow, antiAdblock, highlight, pinMode, topOffset. Only these keys are read; everything else is ignored. Final / external / Telegram links always stay MANUAL in the engine, and the script fully pauses on captcha/Cloudflare regardless of these flags. Edit this file and every device picks it up within a day (no re-publish needed).",
   "sites": {
     "gplinks.co":   { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true },

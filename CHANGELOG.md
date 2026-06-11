@@ -1,5 +1,13 @@
 # Changelog
 
+## 53.0 - Gate-Aware VPlink Chain
+
+- **Live-tested `vplink.in/8MY98t`**: traced the current route through Vacancymode landing and article pages and identified the real failure point.
+- **Vacancymode is now first-class**: added it to built-in profiles and the guarded VPlink chain allowlist instead of relying only on generic Universal matching.
+- **No more false Continue**: when the page requires its manual ad-confirmation cookie, Time Hooker pauses instead of opening `/learn_more.php` early and being rejected back to the homepage.
+- **Automatic resume**: the floating status points to the required page gate; after the user completes it and returns, Time Hooker detects confirmation, finishes the timer, and resumes safe intermediate hops.
+- **No fake gate completion**: V53 does not auto-click ads or forge confirmation cookies. Captcha and final/Telegram destinations remain manual.
+
 ## 52.0 - Confirmed Learning + Safe Recipe Replay
 
 - **Confirmed learning**: intermediate actions are staged first and saved only after the page URL or verified page shape actually advances. Captcha pages, final destinations, Telegram links, ads, overlays, and Time Hooker's own UI are never learned.
