@@ -1,5 +1,17 @@
 # Changelog
 
+## 47.0 - Instant Self-Healing Panel
+
+- The floating panel now re-injects **instantly** via a `MutationObserver` on `<html>` (debounced ~150 ms) instead of only a 2 s poll. Many shortlink/timer pages rebuild `<body>` or wipe the DOM when their countdown starts, which removed the menu and left it gone — this is why the panel showed on some sites but vanished on others. It now reappears immediately and the periodic safety net (now 1.5 s) remains as backup, with the top-most z-index re-asserted.
+- Diagnosis note: the affected sites (e.g. kishanganjhalchal.com, loan.kannursalafi.com) send **no CSP**, so the cause was DOM rebuilds + the pre-V42 builds having no watchdog at all. Devices still on the old published version must update to get the self-healing panel.
+
+## 46.0 - Remote Rules Sync
+
+- **Remote rules sync**: a single hosted JSON (`rules/time-hooker-rules.json`, set via `REMOTE_RULES_URL`) can add or update site rules for every installed device with **no re-publish**. Edit the JSON once → all devices pick it up within a day.
+- **Stability first**: the fetch runs only in the userscript sandbox via `GM_xmlhttpRequest` (added `@grant` + `@connect` hosts), is throttled to once per day, size-limited (200 KB), and fully wrapped in try/catch. The page always boots instantly from the cached/built-in rules and **never blocks**; if the URL is unreachable it silently keeps the last good cache.
+- **Safe by construction**: only known `PROFILE_KEYS` are read from each remote entry and type-coerced, so a malformed remote file cannot break the engine. Remote rules act like built-in profiles (priority: user's own → built-in → remote → learned → global) and never override the captcha pause or the manual final/external/Telegram link guards.
+- Seeded the rules file with common global networks (GPLinks, Exe.io, Ouo.io, ShrinkMe, Clk.sh, Adshrink, Try2Link). UI profile label now shows `remote` when a remote rule is active.
+
 ## 45.0 - Captcha-Safe Pause + Per-Site Learning
 
 - **Captcha / Cloudflare / Turnstile guard**: when a real human-verification challenge is detected (Cloudflare "just a moment" / "checking your browser", reCAPTCHA, hCaptcha, Turnstile widgets), Time Hooker **fully pauses** — no timer speed-up (the timer engine reads `window.th_captcha_present`), no flow skip, no auto-click. The proxy shows `🔒 SOLVE CAPTCHA` so it never looks "stuck". Resumes automatically once the challenge clears. Detection requires the widget to be actually visible (or a full-page CF interstitial) to avoid pausing on hidden/idle widgets.

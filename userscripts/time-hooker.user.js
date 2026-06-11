@@ -1,12 +1,12 @@
 // ==UserScript==
 
-// @name            Time Hooker (V45.0 - Captcha-Safe Pause + Per-Site Learning)
+// @name            Time Hooker (V47.0 - Instant Self-Healing Panel + Remote Rules)
 
 // @namespace       https://tampermonkey.net/
 
-// @version         45.0
+// @version         47.0
 
-// @description     Fast-forwards timers and auto-skips supported shortlink/countdown/verify pages. V45 fully pauses on captcha/Cloudflare/Turnstile (no timer, no skip — shows "SOLVE CAPTCHA") and learns per-site whether force was needed. Builds on V44 stuck-timer fixes, V43 cross-device auto-update, and V42 self-learning sites.
+// @description     Fast-forwards timers and auto-skips supported shortlink/countdown/verify pages. V47 makes the panel instantly self-heal via a MutationObserver (never stays gone when a page rebuilds the DOM). Includes V46 remote rules sync, V45 captcha-safe pause, V44 stuck-timer fixes, V43 auto-update, V42 self-learning.
 
 // @author          rehan & Pankaj034
 
@@ -19,6 +19,14 @@
 // @grant           GM_setValue
 
 // @grant           GM_getValue
+
+// @grant           GM_xmlhttpRequest
+
+// @connect         raw.githubusercontent.com
+
+// @connect         githubusercontent.com
+
+// @connect         github.io
 
 // @license         GPL-3.0-or-later
 
@@ -40,6 +48,22 @@
 
     const STORAGE_KEY = "th_v19_global_settings";
 
+    // --- REMOTE RULES SYNC (stable, optional) ---
+
+    // One hosted JSON adds/updates site rules for every device with NO re-publish.
+
+    // Change this URL to your own raw JSON (and add a matching @connect host above).
+
+    // If the URL is unreachable, the script silently keeps using cached + built-in rules — it never blocks the page.
+
+    const REMOTE_RULES_URL = "https://raw.githubusercontent.com/Pankaj034/time-hooker-public/main/rules/time-hooker-rules.json";
+
+    const REMOTE_CACHE_KEY = "th_remote_rules_cache";
+
+    const REMOTE_TS_KEY = "th_remote_rules_ts";
+
+    const REMOTE_REFRESH_MS = 86400000; // refresh at most once per day
+
 
 
     window.addEventListener('TH_SAVE_GLOBAL', function(e) {
@@ -54,7 +78,11 @@
 
     let savedData = GM_getValue(STORAGE_KEY);
 
-    const mainPageLogic = function(savedStr) {
+    let remoteRulesCached = null;
+
+    try { remoteRulesCached = GM_getValue(REMOTE_CACHE_KEY) || null; } catch(e) { remoteRulesCached = null; }
+
+    const mainPageLogic = function(savedStr, remoteStr) {
 
         const isIframe = window.top !== window.self;
 
@@ -91,6 +119,50 @@
         // Universal pattern detection stays on so unknown-but-similar pages keep working safely.
 
         const LEARNED_PROFILE = { enabled: true, skipTimers: true, speed: 15, aggroBypass: true, smartVerifyFlow: false, waitUntilTimerMoves: false, safeCountdownMode: true, videoSpeed: false, autoClick: false, autoFlowSkip: true, universalFlow: true, antiAdblock: true, highlight: true, pinMode: true, topOffset: 0 };
+
+        // Remote rules: validated, sanitised per-site flags fetched from the hosted JSON (cached in GM storage).
+
+        // Only known PROFILE_KEYS are copied and type-coerced, so a malformed remote file can never break the engine.
+
+        let REMOTE_PROFILES = {};
+
+        (function() {
+
+            try {
+
+                const r = remoteStr ? (typeof remoteStr === 'string' ? JSON.parse(remoteStr) : remoteStr) : null;
+
+                if (r && typeof r === 'object' && r.sites && typeof r.sites === 'object') {
+
+                    Object.keys(r.sites).forEach(function(host) {
+
+                        const raw = r.sites[host];
+
+                        if (!raw || typeof raw !== 'object') return;
+
+                        const clean = {};
+
+                        PROFILE_KEYS.forEach(function(k) {
+
+                            if (!Object.prototype.hasOwnProperty.call(raw, k)) return;
+
+                            if (k === 'speed' || k === 'topOffset') { const n = parseInt(raw[k], 10); if (Number.isFinite(n)) clean[k] = n; }
+
+                            else clean[k] = !!raw[k];
+
+                        });
+
+                        const key = String(host || '').toLowerCase().trim();
+
+                        if (key && Object.keys(clean).length) REMOTE_PROFILES[key] = clean;
+
+                    });
+
+                }
+
+            } catch(e) { REMOTE_PROFILES = {}; }
+
+        })();
 
         function normalizeStore(saved) {
 
@@ -144,11 +216,13 @@
 
         let builtinSuggest = !activeProfile && !!BUILTIN_SITE_PROFILES[SITE_KEY] && !(store.disabledBuiltins && store.disabledBuiltins[SITE_KEY]);
 
-        let learnedSuggest = !activeProfile && !builtinSuggest && isLearnedSite() && !(store.disabledBuiltins && store.disabledBuiltins[SITE_KEY]);
+        let remoteSuggest = !activeProfile && !builtinSuggest && !!REMOTE_PROFILES[SITE_KEY] && !(store.disabledBuiltins && store.disabledBuiltins[SITE_KEY]);
 
-        let suggestedProfile = builtinSuggest || learnedSuggest;
+        let learnedSuggest = !activeProfile && !builtinSuggest && !remoteSuggest && isLearnedSite() && !(store.disabledBuiltins && store.disabledBuiltins[SITE_KEY]);
 
-        const suggestedData = builtinSuggest ? BUILTIN_SITE_PROFILES[SITE_KEY] : (learnedSuggest ? LEARNED_PROFILE : {});
+        let suggestedProfile = builtinSuggest || remoteSuggest || learnedSuggest;
+
+        const suggestedData = builtinSuggest ? BUILTIN_SITE_PROFILES[SITE_KEY] : (remoteSuggest ? Object.assign({}, LEARNED_PROFILE, REMOTE_PROFILES[SITE_KEY]) : (learnedSuggest ? LEARNED_PROFILE : {}));
 
         let S = Object.assign({}, DEFAULTS, store.global, suggestedProfile ? suggestedData : {}, activeProfile ? store.profiles[SITE_KEY] : {});
 
@@ -646,7 +720,7 @@
 
                 <div id="th-header" style="display:flex; justify-content:space-between; align-items:center; cursor:grab; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; margin-bottom:10px;">
 
-                    <span style="font-weight:900; background:linear-gradient(90deg,#00ffcc,#00a8ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; font-size:14px;">⚡ Time Hooker V45.0</span>
+                    <span style="font-weight:900; background:linear-gradient(90deg,#00ffcc,#00a8ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; font-size:14px;">⚡ Time Hooker V47.0</span>
 
                     <button id="th-toggle-btn" style="all:unset; cursor:pointer; background:rgba(255,255,255,0.15); border-radius:6px; padding:2px 10px;">${S.menuExpanded ? '−' : '+'}</button>
 
@@ -658,7 +732,7 @@
 
                     <div id="th-gate-status" style="font-size:11px; color:#9ee9ff; background:rgba(0,255,204,0.08); border:1px solid rgba(0,255,204,0.22); border-radius:6px; padding:6px 8px; text-align:center; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${window.th_gate_status || 'Idle'}</div>
 
-                    <div id="th-profile-status" style="font-size:10px; color:#8a93a6; text-align:center;">Profile: ${activeProfile ? 'this site' : (suggestedProfile ? (builtinSuggest ? 'built-in' : 'learned') : 'global')} · ${SITE_KEY}</div>
+                    <div id="th-profile-status" style="font-size:10px; color:#8a93a6; text-align:center;">Profile: ${activeProfile ? 'this site' : (suggestedProfile ? (builtinSuggest ? 'built-in' : (remoteSuggest ? 'remote' : 'learned')) : 'global')} · ${SITE_KEY}</div>
 
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
 
@@ -748,7 +822,7 @@
 
                 const status = $("th-profile-status");
 
-                if (status) status.textContent = `Profile: ${activeProfile ? 'this site' : (suggestedProfile ? (builtinSuggest ? 'built-in' : 'learned') : 'global')} · ${SITE_KEY}`;
+                if (status) status.textContent = `Profile: ${activeProfile ? 'this site' : (suggestedProfile ? (builtinSuggest ? 'built-in' : (remoteSuggest ? 'remote' : 'learned')) : 'global')} · ${SITE_KEY}`;
 
                 const lc = $("th-learned-count");
 
@@ -1052,9 +1126,11 @@
 
             if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", createFloatingMenu); else createFloatingMenu();
 
-            // Self-healing panel: some shortlink pages wipe the DOM or rebuild <body>. Re-inject the menu if it vanishes.
+            // Self-healing panel: shortlink/timer pages often rebuild <body> or wipe the DOM, which removes the menu.
 
-            setInterval(() => {
+            // Re-inject it instantly (MutationObserver) and via a periodic safety net, and keep it on top.
+
+            const ensurePanel = () => {
 
                 try {
 
@@ -1064,13 +1140,33 @@
 
                     if (!root || !document.documentElement.contains(root)) { createFloatingMenu(); return; }
 
-                    // Keep it clickable on top of aggressive ad overlays.
-
                     if (root.style.zIndex !== "2147483647") root.style.zIndex = "2147483647";
 
                 } catch(e) {}
 
-            }, 2000);
+            };
+
+            try {
+
+                let pending = false;
+
+                const mo = new MutationObserver(() => {
+
+                    if (pending) return;
+
+                    pending = true;
+
+                    (window.th_nativeSetTimeout || setTimeout)(() => { pending = false; ensurePanel(); }, 150);
+
+                });
+
+                const startObserver = () => { try { mo.observe(document.documentElement, { childList: true, subtree: true }); } catch(e) {} };
+
+                if (document.documentElement) startObserver(); else document.addEventListener("DOMContentLoaded", startObserver);
+
+            } catch(e) {}
+
+            setInterval(ensurePanel, 1500);
 
         }
 
@@ -3234,10 +3330,60 @@
 
     const scriptEl = document.createElement('script');
 
-    scriptEl.textContent = `(${mainPageLogic.toString()})(${JSON.stringify(savedData || null)});`;
+    scriptEl.textContent = `(${mainPageLogic.toString()})(${JSON.stringify(savedData || null)}, ${JSON.stringify(remoteRulesCached || null)});`;
 
     (document.head || document.documentElement).appendChild(scriptEl);
 
     scriptEl.remove();
+
+    // Background, throttled remote-rules refresh. Runs in the userscript sandbox (GM_xmlhttpRequest only exists here),
+
+    // fully guarded, size-limited and validated. Never blocks the page; only updates the cache for the NEXT load.
+
+    try {
+
+        const lastTs = parseInt(GM_getValue(REMOTE_TS_KEY) || '0', 10) || 0;
+
+        if (REMOTE_RULES_URL && (Date.now() - lastTs > REMOTE_REFRESH_MS) && typeof GM_xmlhttpRequest === 'function') {
+
+            GM_xmlhttpRequest({
+
+                method: 'GET',
+
+                url: REMOTE_RULES_URL,
+
+                timeout: 15000,
+
+                onload: function(res) {
+
+                    try {
+
+                        if (res && res.status >= 200 && res.status < 300 && typeof res.responseText === 'string' && res.responseText.length < 200000) {
+
+                            const parsed = JSON.parse(res.responseText);
+
+                            if (parsed && typeof parsed === 'object' && parsed.sites && typeof parsed.sites === 'object') {
+
+                                GM_setValue(REMOTE_CACHE_KEY, JSON.stringify(parsed));
+
+                            }
+
+                        }
+
+                    } catch(e) {}
+
+                    try { GM_setValue(REMOTE_TS_KEY, String(Date.now())); } catch(e) {}
+
+                },
+
+                onerror: function() { try { GM_setValue(REMOTE_TS_KEY, String(Date.now())); } catch(e) {} },
+
+                ontimeout: function() { try { GM_setValue(REMOTE_TS_KEY, String(Date.now())); } catch(e) {} }
+
+            });
+
+        }
+
+    } catch(e) {}
 
 })();

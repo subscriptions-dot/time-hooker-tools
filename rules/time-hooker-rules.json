@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "updated": "2026-06-11",
+  "note": "Time Hooker community site rules. Add a hostname under \"sites\" with any of these flags: enabled, skipTimers, speed (1-50), aggroBypass, safeCountdownMode, videoSpeed, autoClick, autoFlowSkip, universalFlow, antiAdblock, highlight, pinMode, topOffset. Only these keys are read; everything else is ignored. Final / external / Telegram links always stay MANUAL in the engine, and the script fully pauses on captcha/Cloudflare regardless of these flags. Edit this file and every device picks it up within a day (no re-publish needed).",
+  "sites": {
+    "gplinks.co":   { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true },
+    "gplinks.in":   { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true },
+    "exe.io":       { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true },
+    "exee.io":      { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true },
+    "ouo.io":       { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true },
+    "ouo.press":    { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true },
+    "shrinkme.io":  { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true },
+    "shrinke.me":   { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true },
+    "clk.sh":       { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true },
+    "adshrink.it":  { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true },
+    "try2link.com": { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true }
+  }
+}
