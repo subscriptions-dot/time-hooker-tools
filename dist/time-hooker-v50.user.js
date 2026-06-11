@@ -1,12 +1,12 @@
 // ==UserScript==
 
-// @name            Time Hooker (V51.0 - Fast Auto-Walk + Crash-Safe Navigation)
+// @name            Time Hooker (V50.0 - Stronger Ad-Overlay Removal + Chain Coverage)
 
 // @namespace       https://tampermonkey.net/
 
-// @version         51.0
+// @version         50.0
 
-// @description     Fast-forwards timers and auto-skips supported shortlink/countdown/verify pages. V51 walks multi-hop chains faster (snappier auto-navigation) with a single-navigation guard so it never double-fires or loops a page into a crash. Includes V50 stronger ad-overlay removal, V49 clean UI, V48 deep page scanner, V47 self-healing panel, V46 remote rules, V45 captcha pause.
+// @description     Fast-forwards timers and auto-skips supported shortlink/countdown/verify pages. V50 removes full-screen ad overlays + scroll-locks more aggressively (while protecting the timer/continue) and adds vacancymode.in to the remote rules. Includes V49 clean UI, V48 deep page scanner, V47 self-healing panel, V46 remote rules, V45 captcha pause.
 
 // @author          rehan & Pankaj034
 
@@ -56,7 +56,7 @@
 
     // If the URL is unreachable, the script silently keeps using cached + built-in rules — it never blocks the page.
 
-    const REMOTE_RULES_URL = "https://raw.githubusercontent.com/subscriptions-dot/time-hooker-tools/main/rules/time-hooker-rules.json";
+    const REMOTE_RULES_URL = "https://raw.githubusercontent.com/Pankaj034/time-hooker-public/main/rules/time-hooker-rules.json";
 
     const REMOTE_CACHE_KEY = "th_remote_rules_cache";
 
@@ -720,7 +720,7 @@
 
                 <div id="th-header" style="display:flex; justify-content:space-between; align-items:center; cursor:grab; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; margin-bottom:10px;">
 
-                    <span style="font-weight:900; background:linear-gradient(90deg,#00ffcc,#00a8ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; font-size:14px;">⚡ Time Hooker V51.0</span>
+                    <span style="font-weight:900; background:linear-gradient(90deg,#00ffcc,#00a8ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; font-size:14px;">⚡ Time Hooker V50.0</span>
 
                     <button id="th-toggle-btn" style="all:unset; cursor:pointer; background:rgba(255,255,255,0.15); border-radius:6px; padding:2px 10px;">${S.menuExpanded ? '−' : '+'}</button>
 
@@ -2062,17 +2062,11 @@
 
             setProxyStatus(proxy, label || 'FLOW: next');
 
-            // Fast auto-walk + anti-crash guard: only one navigation may be scheduled at a time.
-
-            if (window.th_navigating) return true;
-
-            window.th_navigating = true;
-
             (window.th_nativeSetTimeout || setTimeout)(() => {
 
-                if (shouldSkipFlow()) location.href = target; else window.th_navigating = false;
+                if (shouldSkipFlow()) location.href = target;
 
-            }, 150);
+            }, 300);
 
             return true;
 
@@ -2332,17 +2326,11 @@
 
             setProxyStatus(proxy, label || 'UNIVERSAL: next');
 
-            // Fast auto-walk + anti-crash guard: only one navigation may be scheduled at a time.
-
-            if (window.th_navigating) return true;
-
-            window.th_navigating = true;
-
             (window.th_nativeSetTimeout || setTimeout)(() => {
 
-                if (shouldRunUniversalFlow()) location.href = target; else window.th_navigating = false;
+                if (shouldRunUniversalFlow()) location.href = target;
 
-            }, 150);
+            }, 300);
 
             return true;
 

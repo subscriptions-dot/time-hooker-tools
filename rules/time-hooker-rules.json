@@ -13,6 +13,7 @@
     "shrinke.me":   { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true },
     "clk.sh":       { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true },
     "adshrink.it":  { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true },
-    "try2link.com": { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true }
+    "try2link.com": { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true },
+    "vacancymode.in": { "enabled": true, "skipTimers": true, "speed": 15, "autoFlowSkip": true, "universalFlow": true, "antiAdblock": true, "highlight": true, "pinMode": true }
   }
 }

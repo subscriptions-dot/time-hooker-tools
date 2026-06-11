@@ -1,5 +1,28 @@
 # Changelog
 
+## 51.0 - Fast Auto-Walk + Crash-Safe Navigation
+
+- **Faster multi-hop walk**: auto-navigation between safe flow hops now fires in ~150 ms (was 300 ms), so 2-3 redirect hops chain through near-instantly instead of dragging.
+- **Crash-safe guard**: a single `window.th_navigating` lock ensures only one navigation is ever scheduled at a time, so the main loop can't double-fire or bounce a page into a redirect loop. Honest note: the final Telegram link on well-built shorteners is server-gated and cannot be extracted directly — V51 makes walking the chain fast and safe, and the deep scanner still jumps directly whenever a next/final URL is actually embedded in the page.
+
+## 50.0 - Stronger Ad-Overlay Removal + Chain Coverage
+
+- **Ad-overlay removal upgraded** (`Kill Ad Overlays`): now also removes full-screen `fixed`/`absolute`/`sticky` blocking layers, clears body scroll-locks (`overflow`, `position:fixed`, and `modal-open`/`no-scroll`/`overflow-hidden`/etc. classes), and matches more selectors (`backdrop`, `interstitial`, `aria-modal`) and ad networks (propeller, hilltopads, monetag, popcash...). A `hasFlowInside()` guard protects any container holding the timer / continue / get-link / our own panel, so real content is never hidden.
+- **Chain coverage**: traced `vplink.in/<id>` → it JS-redirects to `vacancymode.in` (landing → same-site article timer with countdown + continue + Google ads) → further hops → final Telegram link. Added `vacancymode.in` to the remote rules so the article-timer step auto-activates. Same-site landing→article hops are handled by the V48 deep scanner; cross-domain hops the pages perform themselves via `location.href`.
+
+## 49.0 - Cleaner UI
+
+- Removed the **Site Macro** section (Record / Stop / Play / Delete + dropdowns) from the panel — it was the most complex, least-used part. The macro backend functions remain dormant in code but are no longer exposed.
+- Removed the **Auto Click Target** toggle and merged its behaviour into **Auto Flow Skip** (`shouldAutoFlow()` now triggers on either), so there is a single, clear "do it automatically" switch instead of two overlapping ones.
+- Kept Video Fast Forward (it genuinely changes media `playbackRate`), Highlight, Pin, and Position. No functional change to flow/timer/captcha logic; cleanup is UI-only plus the auto-click merge.
+
+## 48.0 - Deep Page Scanner
+
+- **Deep page scanner**: when there is no confident Continue/Get-Link button, the script now reads the page's own code to find the hidden next URL — JS `location`/`location.replace` assignments, `<meta http-equiv=refresh>`, `data-url`/`data-href`/`data-link` attributes, and base64-encoded URLs decoded with `atob`. This is the "scan the page and understand the flow" capability.
+- **Stable by design**: only **same-host / known-safe-intermediate** scanned URLs auto-advance (loop-protected, max 3 visits); **external / final / Telegram** URLs are never auto-jumped — instead the proxy shows `➡️ NEXT PAGE` for a one-tap move, so the script can't send you somewhere wrong on its own.
+- The `⚡ Force Skip` button also uses the scanner: if nothing is clickable, it navigates to the discovered next URL (user-initiated, so external hops are allowed there).
+- Runs only as a late fallback under Auto Flow Skip / Universal mode; known-site flows and the captcha pause are unchanged.
+
 ## 47.0 - Instant Self-Healing Panel
 
 - The floating panel now re-injects **instantly** via a `MutationObserver` on `<html>` (debounced ~150 ms) instead of only a 2 s poll. Many shortlink/timer pages rebuild `<body>` or wipe the DOM when their countdown starts, which removed the menu and left it gone — this is why the panel showed on some sites but vanished on others. It now reappears immediately and the periodic safety net (now 1.5 s) remains as backup, with the top-most z-index re-asserted.
