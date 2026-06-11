@@ -1,5 +1,14 @@
 # Changelog
 
+## 54.0 - Page Brain + Fast Verified Learning
+
+- **Page Brain**: classifies the current page as redirect, structured step, timer, ready action, manual gate, captcha, final link, loop, or unknown before automation acts.
+- **Clear live explanation**: the panel now reports the active state and reason instead of leaving a generic learning message; hover shows the detected target when available.
+- **Two-confirmation learning**: stable known controls with a verified same-site page transition become trusted after two successful confirmations. Weak or dynamic matches retain the stricter legacy confidence requirement.
+- **Transition verification**: learning still commits only after real URL/page-shape progress; unchanged, wrong, final, and stale routes are rejected with a specific status.
+- **Flow diagnostics**: meaningful state changes are recorded in a small session-only history, capped at 24 entries, to make stuck routes explainable without persistent tracking.
+- **Recovery remains guarded**: repeated route loops stop after three attempts, failing recipes lose confidence, and manual server gates, captchas, external destinations, and Telegram links never become automatic.
+
 ## 53.0 - Gate-Aware VPlink Chain
 
 - **Live-tested `vplink.in/8MY98t`**: traced the current route through Vacancymode landing and article pages and identified the real failure point.

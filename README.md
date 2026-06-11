@@ -24,6 +24,8 @@ Time Hooker is a mobile-friendly userscript for Violentmonkey/Tampermonkey. It h
 - Optional `Universal Pattern Mode` for unknown sites that use the same shortlink page patterns
 - Remote rules sync: a single hosted JSON (`rules/time-hooker-rules.json`) adds/updates supported sites for every device with no re-publish; always falls back to cached/built-in rules and never blocks the page
 - Confirmed action learning: intermediate steps are remembered only after the page actually advances
+- Page Brain classification with clear redirect/timer/gate/captcha/final/loop status
+- Stable verified steps become automatic after two successful confirmations
 - Confidence-gated recipe replay with automatic failure decay, stale-entry pruning, and storage limits
 - One-tap `➕ Add Site` / `🗑 Forget` controls to manage the learned-site list per domain
 - Self-healing floating panel that re-appears if a page tries to remove it
