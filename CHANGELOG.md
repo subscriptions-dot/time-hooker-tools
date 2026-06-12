@@ -1,5 +1,13 @@
 # Changelog
 
+## 56.0 - Honest Two-Step Learning
+
+- **Fixed the learning contract**: unknown structured flows no longer auto-click on their first visit.
+- **First confirmation**: the panel shows `LEARNING 0/2: tap Continue`; doing nothing causes zero clicks and creates no recipe.
+- **Second confirmation**: the next matching visit shows `LEARNING 1/2: tap Continue`.
+- **Trusted replay**: only after both verified manual transitions does the third matching visit auto-run the learned action.
+- **Known flows stay fast**: VPlink/Vacancymode first-class handling is unchanged; both supplied links remained on the required manual gate with zero recipes, pending learning, loops, or premature clicks in repeated tests.
+
 ## 55.0 - Per-Link Memory + Loop Recovery
 
 - **Fixed the reported `vplink.in/zecn` loop**: four-character aliases are now valid and `zecn` gets its own flow-memory key.
