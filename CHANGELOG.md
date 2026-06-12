@@ -1,5 +1,13 @@
 # Changelog
 
+## 57.0 - External Final Guard
+
+- **Fixed unknown-site external jumps**: generic Auto Flow no longer auto-clicks links such as `Continue to Destination` when they leave the current site or resolve to a final route.
+- **Manual final contract is now global**: external, final-path, Telegram, and VPlink final targets all use the same guard in normal actions, countdown-ready actions, learned/intermediate clicks, and delayed auto-clicks.
+- **No false learning or loops**: external destinations remain visible through the proxy as `FINAL LINK: ...`, but require a real user click and do not create recipes or pending learning.
+- **Live finding**: `nowshort.com/Ml2ld53` previously auto-opened a loan-site chain that frequently triggered a Google Search HTTP 429 CAPTCHA. V57 stops safely on the NowShort notice page instead.
+- **Known chains unchanged**: repeated `zecn` and `8MY98t` tests still reach the Vacancymode manual gate with isolated flow history, zero recipes, and zero pending learning.
+
 ## 56.0 - Honest Two-Step Learning
 
 - **Fixed the learning contract**: unknown structured flows no longer auto-click on their first visit.

@@ -32,7 +32,7 @@ Time Hooker is a mobile-friendly userscript for Violentmonkey/Tampermonkey. It h
 - One-tap `➕ Add Site` / `🗑 Forget` controls to manage the learned-site list per domain
 - Self-healing floating panel that re-appears if a page tries to remove it
 - Always-visible live status bar showing the current flow/gate state
-- Final-link guard keeps Telegram and external destinations manual on every host
+- Final-link guard keeps Telegram, external destinations, and final-route links manual on every host
 - Vacancymode gate awareness: pauses for its required manual confirmation and resumes the VPlink chain automatically afterward
 - Direct SchemePro article-chain skipping by decoding safe page targets
 - Per-site saved settings and built-in profiles
